@@ -1,0 +1,7 @@
+# Normalise line endings
+* text=auto eol=lf
+
+# Keep generated / binary assets out of diffs
+*.png binary
+dist/*.html linguist-generated=true
+dist/*.html -diff
