@@ -41,6 +41,15 @@ backing canvas through a simple pinhole camera and filling polygons.
   reachable area is too small.
 - **Biomes** (`biomeOf`) — quadrant-based default / ice / lava, each with its
   own floor palette and, for ice, slippery movement physics.
+- **Arena size** — `MS` is chosen from `ARENA_SIZES` (48 / 64 / 80) in Settings;
+  `applyArenaSize()` reallocates the tile arrays and every generator reads the
+  new `MS`. Campaign layouts are centred with a computed offset so they work at
+  any size.
+- **Colour-vision palettes** — `CB_SAFE` holds alternate enemy palettes for
+  red-green and blue-yellow deficiency; the renderer and the bestiary both
+  consult it.
+- **Bestiary** — `BESTIARY` + `bestiaryEntry()` resolve each enemy type to its
+  sprite, palette and a stat/tactic line.
 
 ## 3. Game loop
 
@@ -104,7 +113,9 @@ Three schemes feed one shared state:
 - **Touch** — a virtual joystick on the left, drag-to-aim on the right, and
   button hit-zones; coordinates are mapped from the *canvas* rect so they stay
   correct whatever the layout.
-- **Gamepad** — polled each frame (`pollPad`), with edge detection for buttons.
+- **Gamepad** — polled each frame (`pollPad`) with a per-button previous-state
+  snapshot for correct edge detection. Fire/swap/throw/pause are remappable
+  (`SET.pad`), captured on the controller screen.
 
 ## 8. UI
 

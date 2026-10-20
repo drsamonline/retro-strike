@@ -61,6 +61,10 @@ Layout options: **Big Buttons**, **Left-handed**, **Large HUD**.
 | Menu navigate | D-pad up/down (`14`/`15`) |
 | Menu confirm / back | A (`0`) / B (`1`) |
 
+> 🎮 **Remappable:** fire, swap weapon, throw and pause can be rebound in
+> **Settings → CONTROLLER: REMAP** (press the button you want to bind).
+> Movement, aiming and menu navigation stay fixed.
+
 ## Settings you can tune
 
 Volume · Music · Scanlines · Sensitivity · Crosshair (cross/dot/circle) ·

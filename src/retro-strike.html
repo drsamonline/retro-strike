@@ -92,7 +92,7 @@ ctx.imageSmoothingEnabled = false;
 var crtEl = document.getElementById("crt");
 
 // ================= settings (persisted) =================
-var SET = { vol: 0.8, lastVol: 0.8, music: 1, scan: 1, sens: 1, cross: 0, fov: 90, assist: 1, dmgNum: 1, fps: 0, bigBtn: 0, lefty: 0, bigUI: 0, keys: 0, ghost: 1, skin: 0 };
+var SET = { vol: 0.8, lastVol: 0.8, music: 1, scan: 1, sens: 1, cross: 0, fov: 90, assist: 1, dmgNum: 1, fps: 0, bigBtn: 0, lefty: 0, bigUI: 0, keys: 0, ghost: 1, skin: 0, cb: 0, arena: 0, pad: { fire: 7, swap: 4, throw: 2, pause: 9 } };
 try {
   var so0 = JSON.parse(localStorage.getItem("retroStrikeSet") || "null");
   if (so0) for (var sk0 in so0) if (SET[sk0] !== undefined) SET[sk0] = so0[sk0];
@@ -213,6 +213,12 @@ var SKINS = [
   SET.cross = pick(SET.cross, [0, 1, 2], 0);
   SET.skin = (typeof SET.skin === "number" && SET.skin >= 0 && SET.skin < SKINS.length) ? SET.skin : 0;
   SET.keys = SET.keys ? 1 : 0;
+  SET.cb = pick(SET.cb, [0, 1, 2], 0);
+  SET.arena = pick(SET.arena, [0, 1, 2], 0);
+  SET.bigUI = pick(SET.bigUI, [0, 1, 2], 0);
+  var padDef = { fire: 7, swap: 4, throw: 2, pause: 9 }, pk;
+  if (!SET.pad || typeof SET.pad !== "object") SET.pad = { fire: 7, swap: 4, throw: 2, pause: 9 };
+  for (pk in padDef) if (typeof SET.pad[pk] !== "number" || SET.pad[pk] < 0 || SET.pad[pk] > 15) SET.pad[pk] = padDef[pk];
 })();
 updateFocal();
 applyKeyPreset();
@@ -290,6 +296,25 @@ var PAL_PK_CLUSTER = { R: "#38bdf8", y: "#fde047" };
 var PAL_SNIPER = { M: "#e879f9", d: "#a21caf", R: "#fde047", T: "#0f172a" };
 var PAL_HEALER = { M: "#a7f3d0", d: "#059669", R: "#f8fafc", T: "#0f172a" };
 var PAL_SUMMONER = { V: "#f472b6", s: "#831843", W: "#fde047", T: "#0f172a" };
+// colour-blind-safe enemy palettes: 1 = red/green safe, 2 = blue/yellow safe
+var CB_SAFE = {
+  1: {
+    grunt: { M: "#38bdf8", d: "#1d4ed8", R: "#f8fafc", T: "#0f172a" },
+    runner: { O: "#fde047", R: "#a16207" },
+    kami: { O: "#e879f9", R: "#f8fafc" },
+    healer: { M: "#22d3ee", d: "#0e7490", R: "#f8fafc", T: "#0f172a" },
+    splitter: { M: "#93c5fd", d: "#1e40af", R: "#f8fafc", T: "#0f172a" },
+    mini: { M: "#bfdbfe", d: "#1e40af", R: "#f8fafc", T: "#0f172a" }
+  },
+  2: {
+    grunt: { M: "#4ade80", d: "#15803d", R: "#f8fafc", T: "#0f172a" },
+    runner: { O: "#ef4444", R: "#7f1d1d" },
+    kami: { O: "#f472b6", R: "#831843" },
+    healer: { M: "#a3e635", d: "#3f6212", R: "#0f172a", T: "#0f172a" },
+    splitter: { M: "#34d399", d: "#065f46", R: "#f8fafc", T: "#0f172a" },
+    mini: { M: "#86efac", d: "#166534", R: "#f8fafc", T: "#0f172a" }
+  }
+};
 
 // ================= weapons =================
 var WEAPONS = {
@@ -302,8 +327,17 @@ var WORDER = ["blaster", "spread", "rifle", "beam"];
 
 // ================= world =================
 var MS = 48, WH = 1.7;
+var ARENA_SIZES = [48, 64, 80];
 var map = new Uint8Array(MS * MS);
 var lava = new Uint8Array(MS * MS);
+// arena size is chosen in Settings; reallocate + let every generator read the new MS
+function applyArenaSize() {
+  var sz = ARENA_SIZES[SET.arena] || 48;
+  if (sz === MS) return;
+  MS = sz;
+  map = new Uint8Array(MS * MS);
+  lava = new Uint8Array(MS * MS);
+}
 var reachList = [], secrets = [], barrels = [], decor = [];
 var wallCells = [], lavaCells = []; // precomputed cell indices (perf: minimap iterates these, not the whole grid)
 // seeded xorshift PRNG for world generation (cheap + reproducible arenas)
@@ -327,6 +361,7 @@ function lavaAt(x, z) {
 }
 function genMap() {
   var i, x, z, w, h, dx, dz, gx, gz, ok;
+  applyArenaSize();
   srand(arenaSeed);
   map.fill(0); lava.fill(0);
   for (i = 0; i < MS; i++) { map[i] = 1; map[(MS - 1) * MS + i] = 1; map[i * MS] = 1; map[i * MS + MS - 1] = 1; }
@@ -523,20 +558,120 @@ var CAMP_MAPS = [normRows([
   "#..######......######..#",
   "#......................#",
   "########################"
+]), normRows([
+  "........................",
+  "..##..##..##..##..##..##",
+  "..##..##..##..##..##..##",
+  "........................",
+  "........................",
+  "..##..##..##..##..##..##",
+  "..##..##..##..##..##..##",
+  "........................",
+  "........................",
+  "..##..##..##..##..##..##",
+  "..##..##..##..##..##..##",
+  "........................",
+  "........................",
+  "..##..##..##..##..##..##",
+  "..##..##..##..##..##..##",
+  "........................",
+  "........................",
+  "..##..##..##..##..##..##",
+  "..##..##..##..##..##..##",
+  "........................",
+  "........................",
+  "..##..##..##..##..##..##",
+  "..##..##..##..##..##..##",
+  "........................"
+]), normRows([
+  "........................",
+  "#####.#####.#####.#####.",
+  "........................",
+  ".#####.#####.#####.#####",
+  "........................",
+  "#####.#####.#####.#####.",
+  "........................",
+  ".#####.#####.#####.#####",
+  "........................",
+  "#####.#####.#####.#####.",
+  "........................",
+  ".#####.#####.#####.#####",
+  "........................",
+  "#####.#####.#####.#####.",
+  "........................",
+  ".#####.#####.#####.#####",
+  "........................",
+  "#####.#####.#####.#####.",
+  "........................",
+  ".#####.#####.#####.#####",
+  "........................",
+  "#####.#####.#####.#####.",
+  "........................",
+  "........................"
+]), normRows([
+  "........................",
+  "........................",
+  "...####............####.",
+  "...#..................#.",
+  "...#..###......###....#.",
+  "...#..#..........#....#.",
+  "...#..#..######..#....#.",
+  "...#..#..#....#..#....#.",
+  "...#..#..#....#..#....#.",
+  "...#..#..#....#..#....#.",
+  "...#..#..######..#....#.",
+  "...#..#..........#....#.",
+  "...#..###......###....#.",
+  "...#..................#.",
+  "...####............####.",
+  "........................",
+  "........................",
+  "........................",
+  "........................",
+  "........................",
+  "........................",
+  "........................",
+  "........................",
+  "........................"
+]), normRows([
+  "........................",
+  "..####............####..",
+  "..####............####..",
+  "..####............####..",
+  "........................",
+  "........................",
+  "....##..............##..",
+  "....##..............##..",
+  "........................",
+  "........#......#........",
+  "........#......#........",
+  "........#......#........",
+  "........#......#........",
+  "........#......#........",
+  "........................",
+  "........................",
+  "....##..............##..",
+  "....##..............##..",
+  "........................",
+  "..####............####..",
+  "..####............####..",
+  "..####............####..",
+  "........................",
+  "........................"
 ])];
 function genCampaignMap(rows) {
-  var x, z, i;
+  var x, z, i, off = (MS - 24) >> 1, cx = MS >> 1;
   srand(arenaSeed);
   map.fill(1); lava.fill(0);
   for (z = 0; z < 24; z++) for (x = 0; x < 24; x++) {
-    map[(z + 12) * MS + (x + 12)] = rows[z].charAt(x) === "#" ? 1 : 0;
+    map[(z + off) * MS + (x + off)] = rows[z].charAt(x) === "#" ? 1 : 0;
   }
   // force a clear 3x3 spawn area at the center
-  for (z = 23; z <= 25; z++) for (x = 23; x <= 25; x++) map[z * MS + x] = 0;
+  for (z = cx - 1; z <= cx + 1; z++) for (x = cx - 1; x <= cx + 1; x++) map[z * MS + x] = 0;
   floodFillCenter();
   if (reachList.length < 150) { genMap(); return; } // safety: fall back to procedural arena
-  for (z = 14; z < 36; z++) for (x = 14; x < 24; x++) {
-    if (!map[z * MS + x] && ((x * 7 + z * 13) % 11 === 0) && z >= 36 - 12) lava[z * MS + x] = 1;
+  for (z = off + 12; z < off + 24; z++) for (x = off + 2; x < off + 12; x++) {
+    if (!map[z * MS + x] && ((x * 7 + z * 13) % 11 === 0)) lava[z * MS + x] = 1;
   }
   placeSecrets(6, 12);
   placeProps();
@@ -1317,7 +1452,7 @@ function startGame(m) {
     var day = Math.floor(Date.now() / 86400000);
     arenaSeed = (day * 2654435761) | 0;
   } else if (mode === "camp") {
-    campLvl = Math.max(1, Math.min(8, campLvl || 1));
+    campLvl = Math.max(1, Math.min(12, campLvl || 1));
     arenaSeed = (campLvl * 7919 + 1234) | 0;
   }
   campObj = null;
@@ -1330,11 +1465,15 @@ function startGame(m) {
       { kind: "chests", n: 3, txt: "FIND 3 CHESTS" },
       { kind: "waves", n: 5, txt: "SURVIVE 5 WAVES" },
       { kind: "boss", txt: "DEFEAT THE GUARDIAN" },
-      { kind: "boss", txt: "DEFEAT THE WARLORD" }
+      { kind: "boss", txt: "DEFEAT THE WARLORD" },
+      { kind: "waves", n: 6, txt: "SURVIVE 6 WAVES" },
+      { kind: "boss", txt: "DEFEAT THE SENTINEL" },
+      { kind: "chests", n: 4, txt: "FIND 4 CHESTS" },
+      { kind: "boss", txt: "DEFEAT THE OVERLORD" }
     ];
     campObj = objs[campLvl - 1];
   }
-  if (mode === "camp") genCampaignMap(CAMP_MAPS[(campLvl - 1) % 3]);
+  if (mode === "camp") genCampaignMap(CAMP_MAPS[(campLvl - 1) % CAMP_MAPS.length]);
   else genMap();
   enemies.length = 0; bullets.length = 0; parts.length = 0; pickups.length = 0; scorePops.length = 0;
   nades.length = 0; mines.length = 0;
@@ -1419,6 +1558,7 @@ function continueRun() {
   arenaSeed = s.arenaSeed; diff = s.diff || 1;
   genMap();
   player = s.player;
+  if (blocked(player.x, player.z, 0.32)) { var ops = openSpot(player.x, player.z); player.x = ops[0]; player.z = ops[1]; }
   score = s.score; kills = s.kills; wave = s.wave; time = s.time;
   secretsFound = s.secretsFound || 0;
   var i;
@@ -1469,9 +1609,10 @@ function resetAll() {
 // ================= menus =================
 var MSC = null, menuIdx = 0, menuRows = [], resetArm = 0;
 var seedMode = false, seedBuf = "";
-function openMenu(m) { MSC = m; menuIdx = 0; resetArm = 0; if (state !== "over") state = "menu"; }
+function openMenu(m) { MSC = m; menuIdx = 0; resetArm = 0; padCapture = null; if (state !== "over") state = "menu"; }
 function backTarget() { return paused ? "pause" : "title"; }
 function goBack() {
+  padCapture = null;
   if (paused) { MSC = "pause"; state = "menu"; }
   else { MSC = null; state = "title"; }
 }
@@ -1500,6 +1641,7 @@ function menuItems() {
     items.push({ t: "TRAINING RANGE", a: function () { startGame("train"); } });
     items.push({ t: "CUSTOM SEED", a: function () { seedMode = true; seedBuf = ""; } });
     items.push({ t: "SETTINGS", a: function () { openMenu("settings"); } });
+    items.push({ t: "BESTIARY", a: function () { openMenu("bestiary"); } });
     items.push({ t: "STATISTICS", a: function () { openMenu("stats"); } });
     items.push({ t: "LEADERBOARD", a: function () { openMenu("board"); } });
     return items;
@@ -1520,10 +1662,10 @@ function menuItems() {
     return items;
   }
   if (MSC === "campaign") {
-    for (i = 1; i <= 8; i++) {
+    for (i = 1; i <= 12; i++) {
       (function (n) {
         items.push({
-          t: "LEVEL " + n + [" WARM UP", " RELICS", " GAUNTLET", " THE WARDEN", " VAULT", " SIEGE", " GUARDIAN", " WARLORD"][n - 1],
+          t: "LEVEL " + n + [" WARM UP", " RELICS", " GAUNTLET", " THE WARDEN", " VAULT", " SIEGE", " GUARDIAN", " WARLORD", " FOUNDRY", " LABYRINTH", " CITADEL", " OVERLORD"][n - 1],
           dim: n > campProg.unlocked,
           a: function () { if (n <= campProg.unlocked) { campLvl = n; startGame("camp"); } else toast("LOCKED - CLEAR LEVEL " + campProg.unlocked, 1.5); }
         });
@@ -1545,7 +1687,10 @@ function menuItems() {
     items.push({ t: "FPS COUNTER: " + (SET.fps ? "ON" : "OFF"), a: function () { SET.fps = SET.fps ? 0 : 1; saveSettings(); } });
     items.push({ t: "BIG BUTTONS: " + (SET.bigBtn ? "ON" : "OFF"), a: function () { SET.bigBtn = SET.bigBtn ? 0 : 1; saveSettings(); applySettings(); } });
     items.push({ t: "LEFT-HANDED: " + (SET.lefty ? "ON" : "OFF"), a: function () { SET.lefty = SET.lefty ? 0 : 1; saveSettings(); applySettings(); } });
-    items.push({ t: "LARGE HUD: " + (SET.bigUI ? "ON" : "OFF"), a: function () { SET.bigUI = SET.bigUI ? 0 : 1; saveSettings(); } });
+    items.push({ t: "HUD SCALE: " + ["NORMAL", "LARGE", "HUGE"][SET.bigUI], a: function () { SET.bigUI = (SET.bigUI + 1) % 3; saveSettings(); } });
+    items.push({ t: "COLOUR VISION: " + ["DEFAULT", "RED-GREEN SAFE", "BLUE-YELLOW SAFE"][SET.cb], a: function () { SET.cb = (SET.cb + 1) % 3; saveSettings(); } });
+    items.push({ t: "ARENA SIZE: " + ["STANDARD", "LARGE", "HUGE"][SET.arena], a: function () { SET.arena = (SET.arena + 1) % 3; saveSettings(); applyArenaSize(); } });
+    items.push({ t: "CONTROLLER: REMAP", a: function () { openMenu("padmap"); } });
     items.push({ t: "KEYBOARD: " + ["QWERTY (WASD)", "AZERTY (ZQSD)"][SET.keys], a: function () { SET.keys = SET.keys ? 0 : 1; saveSettings(); applyKeyPreset(); } });
     items.push({ t: "SKIN: " + SKINS[SET.skin].n + (skinUnlocked(SET.skin) ? "" : " (LOCKED)"), a: function () {
       var n = SET.skin, k;
@@ -1554,6 +1699,20 @@ function menuItems() {
     } });
     items.push({ t: "GHOST REPLAY: " + (SET.ghost ? "ON" : "OFF"), a: function () { SET.ghost = SET.ghost ? 0 : 1; saveSettings(); } });
     items.push({ t: resetArm ? "CONFIRM RESET?" : "RESET ALL DATA", a: function () { if (resetArm) { resetAll(); resetArm = 0; } else { resetArm = Date.now(); toast("PRESS AGAIN TO CONFIRM", 2); } } });
+    items.push({ t: "BACK", a: goBack });
+    return items;
+  }
+  if (MSC === "bestiary") {
+    for (i = 0; i < BESTIARY.length; i++) (function () { items.push({ t: BESTIARY[i].n }); })(i);
+    items.push({ t: "BACK", a: goBack });
+    return items;
+  }
+  if (MSC === "padmap") {
+    items.push({ t: "FIRE: BTN " + SET.pad.fire, a: function () { padCapture = "fire"; } });
+    items.push({ t: "SWAP WEAPON: BTN " + SET.pad.swap, a: function () { padCapture = "swap"; } });
+    items.push({ t: "THROW: BTN " + SET.pad.throw, a: function () { padCapture = "throw"; } });
+    items.push({ t: "PAUSE: BTN " + SET.pad.pause, a: function () { padCapture = "pause"; } });
+    items.push({ t: "RESET DEFAULTS", a: function () { SET.pad = { fire: 7, swap: 4, throw: 2, pause: 9 }; saveSettings(); toast("CONTROLLER RESET", 1.5); } });
     items.push({ t: "BACK", a: goBack });
     return items;
   }
@@ -1583,6 +1742,7 @@ function menuItems() {
 // ================= update =================
 var keys = {}, mouseDown = false;
 var padMx = 0, padMy = 0, padFire = false, padPrev = [false, false, false, false];
+var padPrevBtn = [], padCapture = null;
 var fpsFrames = 0, fpsT = 0, fpsVal = 0;
 function update(dt) {
   time += dt;
@@ -2004,7 +2164,7 @@ function campWin() {
   menuIdx = 0;
   score += 500 + campLvl * 250;
   toast("LEVEL " + campLvl + " CLEAR!", 3);
-  if (campLvl >= campProg.unlocked && campLvl < 8) {
+  if (campLvl >= campProg.unlocked && campLvl < 12) {
     campProg.unlocked = campLvl + 1;
     try { localStorage.setItem("retroStrikeCamp", JSON.stringify(campProg)); } catch (e) {}
   }
@@ -2178,6 +2338,7 @@ function render() {
     var bmp = (e.type === "boss" || e.type === "tank" || e.type === "summoner") ? TANK_BMP : (e.type === "runner" ? RUNNER_BMP : GRUNT_BMP);
     var hw = (e.type === "boss" || e.type === "summoner") ? 1.8 : (e.type === "tank" ? 1.35 : (e.type === "runner" ? 0.85 : (e.type === "mini" ? 0.55 : (e.type === "splitter" ? 0.95 : (e.type === "shield" ? 1.3 : (e.type === "dummy" ? 1.05 : (e.type === "sniper" ? 1.0 : (e.type === "healer" ? 0.95 : 1))))))));
     var pal = e.hitT > 0 ? PAL_FLASH : null;
+    if (!pal && SET.cb && CB_SAFE[SET.cb] && CB_SAFE[SET.cb][e.type]) pal = CB_SAFE[SET.cb][e.type];
     if (!pal && e.type === "splitter") pal = PAL_SPLIT;
     if (!pal && e.type === "shield") pal = PAL_SHIELD;
     if (!pal && e.type === "sniper") pal = PAL_SNIPER;
@@ -2602,24 +2763,27 @@ function drawMinimap() {
 }
 
 function drawHUD() {
-  var FS = SET.bigUI ? 10 : 8;
+  var FS = [8, 10, 12][SET.bigUI] || 8;
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
   if (state === "play") {
     menuRows = [];
     var bOk = bonusType === "speed" ? waveTime <= bonusTarget : waveDmg === 0;
-    ctx.fillStyle = "rgba(11,11,30,0.72)";
-    ctx.fillRect(2, 2, 196, 21);
-    ctx.strokeStyle = "#3a3a5e";
-    ctx.strokeRect(2.5, 2.5, 195, 20);
     ctx.textAlign = "left";
-    ctx.fillStyle = "#e879f9";
     ctx.font = "bold " + FS + "px monospace";
-    // line 1: main objective (compact)
-    if (mode === "train") ctx.fillText("TRAINING RANGE - SHOOT DUMMIES", 5, 4);
-    else if (mode === "camp") ctx.fillText("LVL " + campLvl + ": " + campObj.txt, 5, 4);
-    else if (enemies.length > 0) ctx.fillText("WAVE " + wave + " - " + enemies.length + " ENEMIES LEFT", 5, 4);
-    else ctx.fillText("SHOP OPEN - NEXT WAVE IN " + Math.max(0, 9 - waveGap).toFixed(1) + "S", 5, 4);
+    // line 1: main objective — the box is sized to the text so bigger HUD scales never overflow
+    var objLine = mode === "train" ? "TRAINING RANGE - SHOOT DUMMIES"
+                : mode === "camp" ? "LVL " + campLvl + ": " + campObj.txt
+                : enemies.length > 0 ? "WAVE " + wave + " - " + enemies.length + " ENEMIES LEFT"
+                : "SHOP OPEN - NEXT WAVE IN " + Math.max(0, 9 - waveGap).toFixed(1) + "S";
+    var objW = Math.max(196, ctx.measureText(objLine).width + 10);
+    var objH = FS + 13;
+    ctx.fillStyle = "rgba(11,11,30,0.72)";
+    ctx.fillRect(2, 2, objW, objH);
+    ctx.strokeStyle = "#3a3a5e";
+    ctx.strokeRect(2.5, 2.5, objW - 1, objH - 1);
+    ctx.fillStyle = "#e879f9";
+    ctx.fillText(objLine, 5, 4);
     // line 2: status chips (only what is active this wave)
     var chips = [];
     if (mode === "camp") {
@@ -2638,7 +2802,7 @@ function drawHUD() {
       var chTxt = chips.join("  ");
       ctx.fillStyle = "#f8fafc";
       ctx.font = "bold 7px monospace";
-      ctx.fillText(chTxt.length > 46 ? chTxt.slice(0, 46) : chTxt, 5, 13);
+      ctx.fillText(chTxt.length > 46 ? chTxt.slice(0, 46) : chTxt, 5, 4 + FS + 1);
     }
     // fps counter
     if (SET.fps) {
@@ -2722,9 +2886,9 @@ function drawHUD() {
   ctx.fillRect(21, H - 4, (bw - 2) * player.stam, 1);
   ctx.textAlign = "center";
   ctx.fillStyle = "#a5f3fc";
-  ctx.fillText(mode === "camp" ? "LVL " + campLvl : "WAVE " + wave, W / 2 - 42, H - 15);
+  ctx.fillText(mode === "camp" ? "LVL " + campLvl : "WAVE " + wave, W / 2 - 46, H - 15);
   ctx.fillStyle = "#94a3b8";
-  ctx.fillText("KILLS " + kills, W / 2 + 44, H - 15);
+  ctx.fillText("KILLS " + kills, W / 2 + 30, H - 15);
   ctx.textAlign = "right";
   ctx.fillStyle = "#fde047";
   ctx.fillText("SCORE " + String(score).padStart(6, "0"), W - 5, H - 15);
@@ -2823,13 +2987,28 @@ function drawMenuScreen() {
   ctx.textBaseline = "top";
   ctx.font = "bold 14px monospace";
   ctx.fillStyle = "#e879f9";
-  var titles = { pause: "PAUSED", settings: "SETTINGS", stats: "STATISTICS", board: "LEADERBOARD", campaign: "CAMPAIGN", over: "" };
+  var titles = { pause: "PAUSED", settings: "SETTINGS", stats: "STATISTICS", board: "LEADERBOARD", campaign: "CAMPAIGN", bestiary: "BESTIARY", padmap: "CONTROLLER", over: "" };
   ctx.fillText(titles[MSC] || "", W / 2, 10);
-  drawRows(items, MSC === "settings" ? 30 : 36, MSC === "settings" ? 10 : 11);
+  if (MSC === "bestiary") drawBestiary();
+  else drawRows(items, MSC === "settings" ? 30 : 36, MSC === "settings" ? 10 : 11);
   ctx.font = "bold 8px monospace";
   ctx.fillStyle = "#64748b";
   ctx.textAlign = "center";
-  ctx.fillText(isTouch ? "TAP AN ITEM" : "ARROWS + ENTER, ESC BACK", W / 2, H - 12);
+  if (padCapture) {
+    ctx.fillStyle = "rgba(5,5,16,0.97)";
+    ctx.fillRect(-8, -8, W + 16, H + 16);
+    ctx.font = "bold 11px monospace";
+    ctx.fillStyle = "#fde047";
+    ctx.fillText("PRESS A CONTROLLER BUTTON", W / 2, H / 2 - 18);
+    ctx.font = "bold 8px monospace";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("BINDING: " + padCapture.toUpperCase() + "   (ESC CANCELS)", W / 2, H / 2 + 2);
+    ctx.fillStyle = "#e879f9";
+    ctx.fillText("CURRENT: BTN " + SET.pad[padCapture], W / 2, H / 2 + 16);
+  } else {
+    ctx.fillText(MSC === "bestiary" ? (isTouch ? "TAP: NEXT" : "UP/DOWN: BROWSE, ENTER: NEXT, ESC BACK")
+               : isTouch ? "TAP AN ITEM" : "ARROWS + ENTER, ESC BACK", W / 2, H - 12);
+  }
 }
 function drawTitle() {
   var items = menuItems();
@@ -2857,12 +3036,12 @@ function drawTitle() {
   ctx.textAlign = "center";
   ctx.fillStyle = "#a5f3fc";
   ctx.fillText("BOSSES * BIOMES * SNIPERS * SHOP * DAILY", W / 2, 60);
-  drawRows(items, 74, 11);
+  drawRows(items, 74, 10);
   ctx.font = "bold 8px monospace";
   ctx.fillStyle = "#94a3b8";
-  ctx.fillText("HI " + String(hi).padStart(6, "0") + "  BEST WAVE " + stats.bestWave + "  KILLS " + stats.totalKills, W / 2, 170);
+  ctx.fillText("HI " + String(hi).padStart(6, "0") + "  BEST WAVE " + stats.bestWave + "  KILLS " + stats.totalKills, W / 2, 176);
   ctx.fillStyle = "#7dd3fc";
-  ctx.fillText("ACHIEVEMENTS " + achCount() + "/14" + (isTouch ? "  (TL DIFF / TR ARENA)" : "  (D DIFF / N ARENA)"), W / 2, 182);
+  ctx.fillText("ACHIEVEMENTS " + achCount() + "/14" + (isTouch ? "  (TL DIFF / TR ARENA)" : "  (D DIFF / N ARENA)"), W / 2, 188);
 }
 function drawGameOver() {
   var items = menuItems();
@@ -2914,6 +3093,54 @@ function drawSeedEntry() {
   ctx.fillStyle = "#94a3b8";
   ctx.fillText("TYPE A SEED (A-Z 0-9)", W / 2, 118);
   ctx.fillText("ENTER: PLAY   ESC: BACK", W / 2, 130);
+}
+var BESTIARY = [
+  { n: "GRUNT", bmp: null, pal: null, s: "HP 26+   SPD 1.5   MELEE", d: "The backbone of every wave.\nWalks straight at you and swings." },
+  { n: "RUNNER", bmp: null, pal: null, s: "HP 14+   SPD 2.4   MELEE", d: "Fast and fragile. Closes distance\nquickly and hits for 8." },
+  { n: "TANK", bmp: null, pal: null, s: "HP 80+   SPD 0.95   RANGED", d: "Slow, armoured, spits plasma from\naf ar. Soak it or use the beam." },
+  { n: "SPLITTER", bmp: null, pal: null, s: "HP 40+   SPD 1.1   MELEE", d: "Divides into two fast minis when\nkilled. Clear them fast." },
+  { n: "KAMIKAZE", bmp: null, pal: null, s: "HP 10+   SPD 2.7   SUICIDE", d: "Detonates next to you. Flashes\nwhite just before it blows." },
+  { n: "SHIELD", bmp: null, pal: null, s: "HP 50+   SHIELD 60   RANGED", d: "A blue energy shield soaks damage\nfirst. Break it, then the body." },
+  { n: "SNIPER", bmp: null, pal: null, s: "HP 30+   SPD 0.85   RANGED", d: "Holds a lane and paints a laser\nsight before a hard-hitting shot." },
+  { n: "HEALER", bmp: null, pal: null, s: "HP 22+   SPD 2.0   SUPPORT", d: "Pulses health into nearby allies.\nFragile — kill it first." },
+  { n: "MINI", bmp: null, pal: null, s: "HP 8+   SPD 1.9   MELEE", d: "What a Splitter becomes. Weak\nalone, dangerous in a swarm." },
+  { n: "BOSS", bmp: null, pal: null, s: "HP 380+   RANGED   ENRAGES", d: "Radial plasma bursts. Enrages\nbelow half health." },
+  { n: "SUMMONER", bmp: null, pal: null, s: "HP 380+   RANGED   SUMMONS", d: "An alternate boss that calls in\ngrunts instead of bursting." }
+];
+function bestiaryEntry(i) {
+  var e = BESTIARY[i]; if (!e) return null;
+  var t = ["grunt","runner","tank","splitter","kami","shield","sniper","healer","mini","boss","summoner"][i];
+  var bmp = (t === "tank" || t === "boss" || t === "summoner") ? TANK_BMP : (t === "runner" ? RUNNER_BMP : GRUNT_BMP);
+  var pal = t === "splitter" ? PAL_SPLIT : t === "shield" ? PAL_SHIELD : t === "sniper" ? PAL_SNIPER :
+            t === "healer" ? PAL_HEALER : t === "summoner" ? PAL_SUMMONER : t === "kami" ? PAL_KAMI : null;
+  if (SET.cb && CB_SAFE[SET.cb] && CB_SAFE[SET.cb][t]) pal = CB_SAFE[SET.cb][t];
+  return { n: e.n, bmp: bmp, pal: pal, s: e.s, d: e.d };
+}
+function drawBestiary() {
+  menuRows = [];
+  var entry = bestiaryEntry(menuIdx);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  if (!entry) { // the BACK row
+    ctx.font = "bold 10px monospace";
+    ctx.fillStyle = "#fde047";
+    ctx.fillText("> BACK TO MENU", W / 2, 90);
+    ctx.font = "bold 8px monospace";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("ENTER / ESC", W / 2, 112);
+    return;
+  }
+  var spr = spriteCanvas(entry.bmp, entry.pal), sc = 5;
+  ctx.font = "bold 11px monospace"; ctx.fillStyle = "#fde047";
+  ctx.fillText(entry.n, W / 2, 26);
+  ctx.drawImage(spr, W / 2 - spr.width * sc / 2, 40, spr.width * sc, spr.height * sc);
+  ctx.font = "bold 8px monospace"; ctx.fillStyle = "#a5f3fc";
+  ctx.fillText(entry.s, W / 2, 102);
+  ctx.fillStyle = "#cbd5e1";
+  var lines = entry.d.split("\n"), i;
+  for (i = 0; i < lines.length; i++) ctx.fillText(lines[i], W / 2, 116 + i * 10);
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillText((menuIdx + 1) + " / " + BESTIARY.length, W / 2, 146);
 }
 function drawPhotoHint() {
   ctx.fillStyle = "rgba(5,5,16,0.5)";
@@ -3170,6 +3397,7 @@ window.addEventListener("keydown", function (e) {
     if (e.code === "ArrowUp" || e.code === KP.f) { menuIdx = (menuIdx - 1 + items.length) % items.length; beep(500, 0.03, "square", 0.04); return; }
     if (e.code === "Enter" || e.code === "Space" || e.code === "KeyX") { menuActivate(menuIdx); return; }
     if (e.code === "Escape" || e.code === "Backspace") {
+      if (padCapture) { padCapture = null; beep(300, 0.06, "square", 0.05); return; }
       if (state === "menu") goBack();
       else if (state === "over") quitToTitle();
       return;
@@ -3275,23 +3503,37 @@ function pollPad() {
   if (!gp) return;
   var ax = gp.axes || [], bt = gp.buttons || [];
   function btn(n) { return !!(bt[n] && (bt[n].pressed || bt[n].value > 0.5)); }
+  function edge(n) { return btn(n) && !padPrevBtn[n]; } // correct per-button edge detection
+
+  if (padCapture) { // waiting for a button to bind
+    for (var b = 0; b < bt.length; b++) {
+      if (edge(b)) {
+        SET.pad[padCapture] = b; padCapture = null; saveSettings();
+        toast("BOUND TO BTN " + b, 1.6); beep(760, 0.1, "square", 0.06);
+        break;
+      }
+    }
+    for (var b2 = 0; b2 < bt.length; b2++) padPrevBtn[b2] = btn(b2);
+    return;
+  }
+
   if (state === "play") {
     if (ax.length > 1) { if (Math.abs(ax[0]) > 0.22) padMx = ax[0]; if (Math.abs(ax[1]) > 0.22) padMy = ax[1]; }
     if (ax.length > 2 && Math.abs(ax[2]) > 0.25) player.yaw += ax[2] * 0.085 * SET.sens;
-    padFire = btn(7) || btn(5);
-    if (btn(4) && !padPrev[0]) cycleWeapon();
-    if (btn(2) && !padPrev[2]) throwCurrent();
-    if (btn(9) && !padPrev[3]) pauseOpen(false);
+    padFire = btn(SET.pad.fire);
+    if (edge(SET.pad.swap)) cycleWeapon();
+    if (edge(SET.pad.throw)) throwCurrent();
+    if (edge(SET.pad.pause)) pauseOpen(false);
   } else if (state === "title" || state === "menu" || state === "over") {
-    if (btn(14) && !padPrev[0]) { menuIdx--; beep(500, 0.03, "square", 0.04); }
-    if (btn(15) && !padPrev[1]) { menuIdx++; beep(500, 0.03, "square", 0.04); }
+    if (edge(14)) { menuIdx--; beep(500, 0.03, "square", 0.04); }
+    if (edge(15)) { menuIdx++; beep(500, 0.03, "square", 0.04); }
     var items = menuItems();
     if (menuIdx < 0) menuIdx = items.length - 1;
     if (menuIdx >= items.length) menuIdx = 0;
-    if (btn(0) && !padPrev[2]) menuActivate(menuIdx);
-    if (btn(1) && !padPrev[3]) { if (state === "menu") goBack(); else if (state === "over") quitToTitle(); }
+    if (edge(0)) menuActivate(menuIdx);
+    if (edge(1)) { if (state === "menu") goBack(); else if (state === "over") quitToTitle(); }
   }
-  padPrev = [btn(4), btn(15) || btn(14), btn(0) || btn(2), btn(9) || btn(1)];
+  for (var b3 = 0; b3 < bt.length; b3++) padPrevBtn[b3] = btn(b3);
 }
 
 // ================= main loop =================

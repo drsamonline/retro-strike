@@ -8,8 +8,8 @@
 No engine, no build step, no dependencies — a custom software 3D renderer, a chiptune synth and a procedural arena, all in one document.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-3DA639.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3.0-7c3aed.svg?style=flat-square)](CHANGELOG.md)
-[![Release size](https://img.shields.io/badge/minified-94%20KB-e879f9.svg?style=flat-square)](dist/retro-strike.min.html)
+[![Version](https://img.shields.io/badge/version-1.4.0-7c3aed.svg?style=flat-square)](CHANGELOG.md)
+[![Release size](https://img.shields.io/badge/minified-99%20KB-e879f9.svg?style=flat-square)](dist/retro-strike.min.html)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-4ade80.svg?style=flat-square)](#-tech)
 [![Made with JavaScript](https://img.shields.io/badge/JavaScript-f7df1e.svg?style=flat-square&logo=javascript&logoColor=black)](#-tech)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26.svg?style=flat-square&logo=html5&logoColor=white)](#-tech)
@@ -55,8 +55,13 @@ No engine, no build step, no dependencies — a custom software 3D renderer, a c
 | 👾 **9 enemy types** | Grunt, Runner, Tank, Splitter, Kamikaze, Shield-bearer, **Sniper** (telegraphed long-range shot) and **Healer** (pulses health to allies), plus elite/gold variants |
 | 👹 **Two bosses** | Every 5th wave, with an enraged second phase — the **Summoner** calls in reinforcements |
 | 🌍 **Procedural arenas** | Seeded xorshift generator with flood-fill reachability, plazas, lava & ice biomes |
-| 🗺️ **8-level campaign** | Hand-crafted layouts with objective variety (survive, find chests, defeat bosses) |
+| 🗺️ **12-level campaign** | Hand-crafted layouts with objective variety (survive, find chests, defeat bosses) |
 | 🎲 **Custom seeds** | Type a seed on the title screen to replay or share any arena |
+| 📖 **Bestiary** | An in-game codex of all 11 enemies and bosses, with stats and tactics |
+| 🎮 **Controller remapping** | Rebind fire / swap / throw / pause to any gamepad button |
+| 👁️ **Colour-vision palettes** | Red-green and blue-yellow safe enemy palettes |
+| 🖥️ **Variable arena size** | Standard / Large / Huge (48 / 64 / 80 tiles) |
+| ♿ **Adjustable HUD** | Three HUD scales, plus FOV, crosshair, sensitivity, aim assist and more |
 | 📅 **Daily Challenge** | A fresh date-seeded arena every day, with its own best-score tracking |
 | 👻 **Ghost replay** | Race the spectre of your best run on the same seed |
 | 💣 **Throwables** | Grenades, proximity mines and cluster bombs, plus melee and a dash |
@@ -77,15 +82,19 @@ No engine, no build step, no dependencies — a custom software 3D renderer, a c
 
 <div align="center">
 
-| 🎯 Sniper (telegraphs its shot) | 💚 Healer (pulses health to allies) |
+| 📖 Bestiary (codex) | 🎮 Controller remapping |
 |:---:|:---:|
+| ![Bestiary](assets/screenshots/14-bestiary.png) | ![Controller](assets/screenshots/15-controller.png) |
+| 🎯 Sniper (telegraphs its shot) | 💚 Healer (pulses health to allies) |
 | ![Sniper](assets/screenshots/11-sniper.png) | ![Healer](assets/screenshots/12-healer.png) |
-| 👹 Summoner boss | 🎮 Combat |
-| ![Summoner](assets/screenshots/13-summoner.png) | ![Combat](assets/screenshots/02-arena.png) |
-| 👹 Boss fight | 🛒 Between-wave shop |
-| ![Boss](assets/screenshots/03-boss.png) | ![Shop](assets/screenshots/04-shop.png) |
-| 🗺️ Campaign | 🌙 Night, rain & lightning |
-| ![Campaign](assets/screenshots/05-campaign.png) | ![Night](assets/screenshots/08-night.png) |
+| 👹 Summoner boss | 👁️ Colour-vision safe palettes |
+| ![Summoner](assets/screenshots/13-summoner.png) | ![Colour vision](assets/screenshots/16-colourblind.png) |
+| 🎮 Combat | 👹 Boss fight |
+| ![Combat](assets/screenshots/02-arena.png) | ![Boss](assets/screenshots/03-boss.png) |
+| 🛒 Between-wave shop | 🗺️ Campaign |
+| ![Shop](assets/screenshots/04-shop.png) | ![Campaign](assets/screenshots/05-campaign.png) |
+| 🖥️ Huge HUD scale | 🌙 Night, rain & lightning |
+| ![Huge HUD](assets/screenshots/18-hudscale.png) | ![Night](assets/screenshots/08-night.png) |
 | ⚙️ Settings | 🏆 Leaderboard |
 | ![Settings](assets/screenshots/06-settings.png) | ![Leaderboard](assets/screenshots/07-leaderboard.png) |
 
@@ -258,19 +267,19 @@ See [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) for the measured before/after.
 
 > 🧍 **Single-player only — permanently.** RETRO STRIKE has no servers, accounts, matchmaking or networking of any kind, and none are planned. Every item below runs entirely in your browser.
 
-**Shipped in v1.3.0**
+**✅ Shipped**
 
-- [x] New enemy archetypes — the **Sniper** (holds a lane and telegraphs a long-range shot) and the **Healer** (pulses health to nearby allies)
-- [x] A second boss — the **Summoner**, which calls in reinforcements mid-fight
-- [x] **Custom arena seeds** — type any seed on the title screen to replay an arena
+- [x] **v1.3.0** — new enemy archetypes (**Sniper**, **Healer**), a second boss (**Summoner**), and **custom arena seeds**
+- [x] **v1.4.0** — **12 campaign levels** (4 new chapters), **Bestiary** codex, **controller remapping**, **colour-vision palettes**, **3-step HUD scale**, and **variable arena size** (48 / 64 / 80)
 
-**Planned**
+**💡 Ideas (all client-side)**
 
-- [ ] Additional campaign chapters (levels 9–12)
-- [ ] Controller remapping UI
-- [ ] More accessibility presets (colour-blind palettes, adjustable HUD scale)
-- [ ] Optional WebGL renderer for very large arenas
-- [ ] Boss bestiary / in-game codex
+- [ ] Daily mutator combinations / a weekly challenge
+- [ ] Weapon mastery perks
+- [ ] An endless "boss rush" mode
+- [ ] Replay export — share a run as a file
+
+> The old "optional WebGL renderer" idea is **dropped**: the software renderer already handles the largest arena size comfortably, so a second renderer would add a lot of complexity for no real gain. Large arenas are now a built-in setting instead.
 
 Have an idea? [Open a feature request](issues/new?template=feature_request.md).
 

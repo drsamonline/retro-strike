@@ -3,6 +3,27 @@
 All notable changes to **RETRO STRIKE** are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.4.0] — 2026-10-20
+
+The whole remaining roadmap, implemented. Still single-player only — no servers, ever.
+
+### Added
+- 🗺️ **Campaign chapters 9–12** — four new hand-crafted layouts (**Foundry**, **Labyrinth**, **Citadel**, **Overlord**) with new objectives; the campaign is now 12 levels and the unlock chain runs the full way.
+- 📖 **Bestiary / codex** — a title-screen screen listing all 11 enemies and bosses with a live sprite, stats and a tactic line each.
+- 🎮 **Controller remapping** — rebind **fire / swap / throw / pause** to any gamepad button, with a press-a-button capture screen and reset-to-defaults.
+- 👁️ **Colour-vision palettes** — red-green-safe and blue-yellow-safe enemy palettes, applied in-game and in the bestiary.
+- 🖥️ **Variable arena size** — Standard / Large / Huge (48 / 64 / 80 tiles) for Endless, Daily and Training.
+- ♿ **Three-step HUD scale** (Normal / Large / Huge), replacing the old on-off toggle.
+
+### Fixed
+- 🐛 **Gamepad edge detection was wrong.** Menu navigation compared each button against the wrong "previous frame" slot, so holding a button could repeat or miss actions. Polling now keeps a correct per-button snapshot, so a held button fires exactly once.
+- 🐛 **Saving mid-run could restore you inside a wall** (e.g. after changing arena size). The restored position is now snapped to walkable ground.
+- 🐛 The campaign map generator assumed a fixed arena size; it now centres any size.
+
+### Changed
+- 📐 Objective panel now sizes itself to its text, so large HUD scales no longer overflow it.
+- 🎨 Bestiary and controller screens re-spaced so nothing overlaps.
+
 ## [1.3.0] — 2026-10-20
 
 ### Added — single-player content

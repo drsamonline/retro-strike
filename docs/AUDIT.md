@@ -222,3 +222,23 @@ Regression coverage added: a `pickuptest` that drops 60 items from a kill
 *inside a wall* and asserts every one lands on walkable ground and is
 collectable, plus the walk-over collection case. All suites (mode harness,
 layout, audit, pickup) pass on v1.3.0.
+
+
+---
+
+## 12. Follow-up audit — v1.4.0 (2026-10-20)
+
+Audit carried out alongside the roadmap build (rendering every new screen
+headlessly and re-reading the changed paths).
+
+| # | Sev | Issue | Fix |
+|---|-----|-------|-----|
+| 1 | M | **Gamepad edge detection used the wrong previous-frame slots.** `padPrev` was written as `[btn(4), btn(15)||btn(14), btn(0)||btn(2), btn(9)||btn(1)]` but the menu branch read `padPrev[0]` for button 14 and `padPrev[1]` for button 15 — so a held d-pad or face button could repeat or swallow actions. | `pollPad` now keeps a per-button snapshot (`padPrevBtn`) and an `edge(n)` helper; a held button fires exactly once. Covered by a test with a mocked gamepad. |
+| 2 | M | **Restoring a mid-run save could drop the player inside geometry** after an arena-size change. | The restored position is snapped through `openSpot()`. |
+| 3 | L | Bestiary title overlapped the entry name; the remap prompt showed the menu rows through it. | Re-spaced; the capture prompt is now a full-screen overlay. |
+| 4 | L | The objective panel was a fixed 196×21, so the new **Huge** HUD scale overflowed it. | The panel now measures its text and sizes itself. |
+| 5 | L | Adding a 9th title-menu row pushed the hi-score line onto the last row. | Title row height and footer spacing adjusted. |
+
+Test suites on v1.4.0: mode harness (incl. 12 campaign levels, 3 arena sizes,
+3 colour-vision modes, bestiary + controller screens), 12 layout assertions,
+20 audit regressions, 17 feature tests, 9 pickup tests — **all passing**.
