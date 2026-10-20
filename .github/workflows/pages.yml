@@ -33,8 +33,6 @@ jobs:
 
       - name: ⚙️ Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true   # turn on Pages (GitHub Actions source) on first run
 
       - name: ⬆️ Upload artifact
         uses: actions/upload-pages-artifact@v3
