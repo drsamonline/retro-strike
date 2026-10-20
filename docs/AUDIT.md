@@ -201,3 +201,24 @@ Canvas 2D implementation and capturing every screen. That surfaced a set of
 
 All 32 automated checks (mode/regression harness + layout assertions) pass on
 the fixed build.
+
+
+---
+
+## 11. Follow-up audit — v1.3.0 (2026-10-20)
+
+A player-reported bug: *"items and drops are not collected even when you walk
+to them."*
+
+Reproduced and root-caused:
+
+| # | Sev | Issue | Fix |
+|---|-----|-------|-----|
+| 1 | H | Bullet and melee **knockback applied position changes without a collision check**, so enemies could be shoved inside walls. Killed there, their loot dropped **inside geometry**, where the player (radius 0.32, blocked by walls) could never get within pickup range. | Knockback now goes through `blocked()`; a safety net eases any body that still ends up inside geometry back out |
+| 2 | H | Loot was placed at the exact death position with no walkability check | All drops route through `addDrop` → `openSpot`, which snaps to the nearest walkable tile |
+| 3 | M | Pickup radius was only ~0.77 tiles, so near-misses felt like the item "didn't register" | Widened to ~0.95 tiles |
+
+Regression coverage added: a `pickuptest` that drops 60 items from a kill
+*inside a wall* and asserts every one lands on walkable ground and is
+collectable, plus the walk-over collection case. All suites (mode harness,
+layout, audit, pickup) pass on v1.3.0.

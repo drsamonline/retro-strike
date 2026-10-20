@@ -8,8 +8,8 @@
 No engine, no build step, no dependencies — a custom software 3D renderer, a chiptune synth and a procedural arena, all in one document.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-3DA639.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.0-7c3aed.svg?style=flat-square)](CHANGELOG.md)
-[![Release size](https://img.shields.io/badge/minified-91%20KB-e879f9.svg?style=flat-square)](dist/retro-strike.min.html)
+[![Version](https://img.shields.io/badge/version-1.3.0-7c3aed.svg?style=flat-square)](CHANGELOG.md)
+[![Release size](https://img.shields.io/badge/minified-94%20KB-e879f9.svg?style=flat-square)](dist/retro-strike.min.html)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-4ade80.svg?style=flat-square)](#-tech)
 [![Made with JavaScript](https://img.shields.io/badge/JavaScript-f7df1e.svg?style=flat-square&logo=javascript&logoColor=black)](#-tech)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26.svg?style=flat-square&logo=html5&logoColor=white)](#-tech)
@@ -52,10 +52,11 @@ No engine, no build step, no dependencies — a custom software 3D renderer, a c
 | | |
 |---|---|
 | 🔫 **4 weapons** | Blaster, Spread (5 pellets), Rifle (full-auto), Beam (piercing) — each with a 3-tier upgrade path |
-| 👾 **7 enemy types** | Grunt, Runner, Tank, Splitter, Kamikaze, Shield-bearer and **Bosses**, plus elite/gold variants |
-| 👹 **Boss fights** | Every 5th wave, with an enraged second phase |
+| 👾 **9 enemy types** | Grunt, Runner, Tank, Splitter, Kamikaze, Shield-bearer, **Sniper** (telegraphed long-range shot) and **Healer** (pulses health to allies), plus elite/gold variants |
+| 👹 **Two bosses** | Every 5th wave, with an enraged second phase — the **Summoner** calls in reinforcements |
 | 🌍 **Procedural arenas** | Seeded xorshift generator with flood-fill reachability, plazas, lava & ice biomes |
 | 🗺️ **8-level campaign** | Hand-crafted layouts with objective variety (survive, find chests, defeat bosses) |
+| 🎲 **Custom seeds** | Type a seed on the title screen to replay or share any arena |
 | 📅 **Daily Challenge** | A fresh date-seeded arena every day, with its own best-score tracking |
 | 👻 **Ghost replay** | Race the spectre of your best run on the same seed |
 | 💣 **Throwables** | Grenades, proximity mines and cluster bombs, plus melee and a dash |
@@ -76,15 +77,17 @@ No engine, no build step, no dependencies — a custom software 3D renderer, a c
 
 <div align="center">
 
-| 🎮 Combat | 👹 Boss fight |
+| 🎯 Sniper (telegraphs its shot) | 💚 Healer (pulses health to allies) |
 |:---:|:---:|
-| ![Combat](assets/screenshots/02-arena.png) | ![Boss](assets/screenshots/03-boss.png) |
-| 🛒 Between-wave shop | 🗺️ Campaign |
-| ![Shop](assets/screenshots/04-shop.png) | ![Campaign](assets/screenshots/05-campaign.png) |
-| 🌙 Night, rain & lightning | ⚙️ Settings |
-| ![Night](assets/screenshots/08-night.png) | ![Settings](assets/screenshots/06-settings.png) |
-| 🏆 Leaderboard | 🏁 Title screen |
-| ![Leaderboard](assets/screenshots/07-leaderboard.png) | ![Title](assets/screenshots/01-title.png) |
+| ![Sniper](assets/screenshots/11-sniper.png) | ![Healer](assets/screenshots/12-healer.png) |
+| 👹 Summoner boss | 🎮 Combat |
+| ![Summoner](assets/screenshots/13-summoner.png) | ![Combat](assets/screenshots/02-arena.png) |
+| 👹 Boss fight | 🛒 Between-wave shop |
+| ![Boss](assets/screenshots/03-boss.png) | ![Shop](assets/screenshots/04-shop.png) |
+| 🗺️ Campaign | 🌙 Night, rain & lightning |
+| ![Campaign](assets/screenshots/05-campaign.png) | ![Night](assets/screenshots/08-night.png) |
+| ⚙️ Settings | 🏆 Leaderboard |
+| ![Settings](assets/screenshots/06-settings.png) | ![Leaderboard](assets/screenshots/07-leaderboard.png) |
 
 <sub>Captured from the live game — the real 320×200 software renderer, 4× nearest-neighbour upscale.</sub>
 
@@ -253,11 +256,21 @@ See [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) for the measured before/after.
 
 ## 🗺️ Roadmap
 
-- [ ] WebGL renderer fallback for very large arenas
-- [ ] Additional campaign chapters & enemy archetypes
+> 🧍 **Single-player only — permanently.** RETRO STRIKE has no servers, accounts, matchmaking or networking of any kind, and none are planned. Every item below runs entirely in your browser.
+
+**Shipped in v1.3.0**
+
+- [x] New enemy archetypes — the **Sniper** (holds a lane and telegraphs a long-range shot) and the **Healer** (pulses health to nearby allies)
+- [x] A second boss — the **Summoner**, which calls in reinforcements mid-fight
+- [x] **Custom arena seeds** — type any seed on the title screen to replay an arena
+
+**Planned**
+
+- [ ] Additional campaign chapters (levels 9–12)
 - [ ] Controller remapping UI
-- [ ] Optional seeded share-codes for custom arenas
-- [ ] WebRTC co-op
+- [ ] More accessibility presets (colour-blind palettes, adjustable HUD scale)
+- [ ] Optional WebGL renderer for very large arenas
+- [ ] Boss bestiary / in-game codex
 
 Have an idea? [Open a feature request](issues/new?template=feature_request.md).
 

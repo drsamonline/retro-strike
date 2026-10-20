@@ -3,6 +3,22 @@
 All notable changes to **RETRO STRIKE** are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.3.0] — 2026-10-20
+
+### Added — single-player content
+- 🎯 **Sniper enemy** — keeps its distance and charges a **telegraphed** long-range shot (a laser sight gives you time to break line of sight). Appears from wave 5.
+- 💚 **Healer enemy** — a fragile support unit that **pulses health to nearby allies** inside a visible aura. Kill it first or the pack out-sustains you. Appears from wave 5.
+- 👹 **Summoner boss** — an alternate boss on every other boss wave (10, 20, …) that **calls in grunts** during the fight.
+- 🎲 **Custom arena seed** — a "CUSTOM SEED" entry on the title screen; type a seed and play that exact arena.
+
+### Fixed — loot you could not pick up
+- 🐛 **Drops landing inside walls.** Bullet and melee **knockback ignored collision**, so enemies could be shoved into geometry and die there — dropping loot inside a wall where it could never be reached. Knockback now respects walls, and any body that still ends up inside geometry is eased back out.
+- 🐛 **Loot is now snapped to walkable ground** (`openSpot`) before it drops, so it can always be collected.
+- 🐛 **Pickup radius widened** (~0.77 → ~0.95 tiles) so walking over an item reliably collects it.
+
+### Notes
+- 🧍 Roadmap is now **single-player only, permanently** — no servers or networking, ever.
+
 ## [1.2.0] — 2026-10-20
 
 A second pass after rendering the game headlessly and inspecting every screen.

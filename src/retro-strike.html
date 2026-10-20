@@ -287,6 +287,9 @@ var PAL_MINE_OFF = { R: "#7f1d1d", y: "#7c2d12" };
 var PAL_PK_SHIELD = { R: "#38bdf8", W: "#e0f2fe" };
 var PAL_PK_UPGRADE = { V: "#fde047", s: "#b45309", W: "#fff" };
 var PAL_PK_CLUSTER = { R: "#38bdf8", y: "#fde047" };
+var PAL_SNIPER = { M: "#e879f9", d: "#a21caf", R: "#fde047", T: "#0f172a" };
+var PAL_HEALER = { M: "#a7f3d0", d: "#059669", R: "#f8fafc", T: "#0f172a" };
+var PAL_SUMMONER = { V: "#f472b6", s: "#831843", W: "#fde047", T: "#0f172a" };
 
 // ================= weapons =================
 var WEAPONS = {
@@ -629,6 +632,22 @@ function blocked(x, z, r) {
   return isWall(Math.floor(x - r), Math.floor(z - r)) || isWall(Math.floor(x + r), Math.floor(z - r)) ||
          isWall(Math.floor(x - r), Math.floor(z + r)) || isWall(Math.floor(x + r), Math.floor(z + r));
 }
+// nearest walkable point to (x,z) — keeps loot out of walls so it can always be picked up
+function openSpot(x, z) {
+  var gx = Math.floor(x), gz = Math.floor(z), r, dx, dz;
+  if (!isWall(gx, gz)) return [x, z];
+  for (r = 1; r <= 5; r++) {
+    for (dx = -r; dx <= r; dx++) for (dz = -r; dz <= r; dz++) {
+      if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+      if (!isWall(gx + dx, gz + dz)) return [gx + dx + 0.5, gz + dz + 0.5];
+    }
+  }
+  return [x, z];
+}
+function addDrop(x, z, kind, sub) {
+  var p = openSpot(x, z);
+  pickups.push({ x: p[0], z: p[1], kind: kind, sub: sub, t: 0 });
+}
 function angDiff(a, b) {
   var d = a - b;
   while (d > Math.PI) d -= Math.PI * 2;
@@ -835,10 +854,13 @@ function spawnWave() {
   if (wave % 5 === 0 || (mode === "camp" && campObj && campObj.kind === "boss")) {
     sp = findSpot(9, 14);
     var bhp = Math.round((380 + wave * 22) * D.hp);
+    // every other boss wave brings the Summoner instead of the classic boss
+    var bossType = (mode === "camp" || ((wave / 5) % 2 === 1)) ? "boss" : "summoner";
     enemies.push({
-      x: sp[0], z: sp[1], type: "boss", hp: bhp, maxhp: bhp,
-      speed: 0.72 * D.spd, r: 0.8, cd: 2.5, hitT: 0, spawnT: 0.5, wob: 0, p2: false
+      x: sp[0], z: sp[1], type: bossType, hp: bhp, maxhp: bhp,
+      speed: 0.72 * D.spd, r: 0.8, cd: 2.5, hitT: 0, spawnT: 0.5, wob: 0, p2: false, charge: 0
     });
+    if (bossType === "summoner") toast("THE SUMMONER RISES!", 2.2);
     if (mode === "camp" && campObj && campObj.kind === "boss") campObj.bossDown = false;
     n = Math.floor(n / 2);
   }
@@ -847,20 +869,22 @@ function spawnWave() {
   for (i = 0; i < n; i++) {
     sp = findSpot(10, 24);
     var r = Math.random();
-    if (wave >= 3 && r < 0.10) type = "splitter";
-    else if (wave >= 3 && r < 0.20) type = "kami";
-    else if (wave >= 3 && r < 0.28) type = "shield";
-    else if (wave >= 2 && r < 0.48) type = "tank";
-    else if (wave >= 2 && r < 0.66) type = "runner";
+    if (wave >= 5 && r < 0.07) type = "sniper";
+    else if (wave >= 5 && r < 0.13) type = "healer";
+    else if (wave >= 3 && r < 0.22) type = "splitter";
+    else if (wave >= 3 && r < 0.32) type = "kami";
+    else if (wave >= 3 && r < 0.40) type = "shield";
+    else if (wave >= 2 && r < 0.58) type = "tank";
+    else if (wave >= 2 && r < 0.74) type = "runner";
     else type = "grunt";
-    var hp = Math.round((type === "tank" ? 80 + wave * 12 : (type === "runner" ? 14 + wave * 3 : (type === "splitter" ? 40 + wave * 8 : (type === "kami" ? 10 + wave * 2 : (type === "shield" ? 50 + wave * 10 : 26 + wave * 6))))) * hpMul);
-    var spd = (type === "tank" ? 0.95 : (type === "runner" ? 2.4 + Math.min(0.8, wave * 0.1) : (type === "splitter" ? 1.1 : (type === "kami" ? 2.7 : (type === "shield" ? 0.9 : 1.5 + Math.min(1.1, wave * 0.12)))))) * spMul;
+    var hp = Math.round((type === "tank" ? 80 + wave * 12 : (type === "runner" ? 14 + wave * 3 : (type === "splitter" ? 40 + wave * 8 : (type === "kami" ? 10 + wave * 2 : (type === "shield" ? 50 + wave * 10 : (type === "sniper" ? 30 + wave * 5 : (type === "healer" ? 22 + wave * 4 : 26 + wave * 6))))))) * hpMul);
+    var spd = (type === "tank" ? 0.95 : (type === "runner" ? 2.4 + Math.min(0.8, wave * 0.1) : (type === "splitter" ? 1.1 : (type === "kami" ? 2.7 : (type === "shield" ? 0.9 : (type === "sniper" ? 0.85 : (type === "healer" ? 2.0 : 1.5 + Math.min(1.1, wave * 0.12)))))))) * spMul;
     var e = {
       x: sp[0], z: sp[1], type: type,
       hp: hp, maxhp: hp, speed: spd,
-      r: type === "tank" ? 0.55 : (type === "runner" ? 0.34 : (type === "kami" ? 0.32 : (type === "shield" ? 0.5 : (type === "splitter" ? 0.45 : 0.42)))),
+      r: type === "tank" ? 0.55 : (type === "runner" ? 0.34 : (type === "kami" ? 0.32 : (type === "shield" ? 0.5 : (type === "splitter" ? 0.45 : (type === "sniper" ? 0.4 : (type === "healer" ? 0.38 : 0.42)))))),
       cd: 1 + Math.random() * 2, hitT: 0, spawnT: 0.5, wob: Math.random() * 6.28,
-      elite: false, gold: false, shield: type === "shield" ? Math.round(60 * D.hp) : 0
+      elite: false, gold: false, shield: type === "shield" ? Math.round(60 * D.hp) : 0, charge: 0
     };
     if (wave >= 4 && Math.random() < 0.12) { e.elite = true; e.hp = Math.round(e.hp * 2.2); e.maxhp = e.hp; e.speed *= 1.15; }
     if (waveMut && waveMut.k === "BOUNTY" && !enemies.length) { e.gold = true; e.elite = true; e.hp = Math.round(e.hp * 2); e.maxhp = e.hp; }
@@ -966,7 +990,9 @@ function hitEnemy(e, b) {
     if (waveObj.got >= waveObj.n) { score += waveObj.pts; setObjMsg("SHARPSHOOTER! +" + waveObj.pts, 2.5); jingle(); waveObj = null; }
   }
   var d = Math.hypot(b.dx, b.dz) || 1;
-  e.x += b.dx / d * 0.12; e.z += b.dz / d * 0.12;
+  var kbx = e.x + b.dx / d * 0.12, kbz = e.z + b.dz / d * 0.12;
+  if (!blocked(kbx, e.z, e.r * 0.8)) e.x = kbx;
+  if (!blocked(e.x, kbz, e.r * 0.8)) e.z = kbz;
   spark(e.x, 0.8, e.z, "#86efac", 5);
   beep(300, 0.05, "square", 0.05, 180);
 }
@@ -995,6 +1021,47 @@ function bossBurst(e) {
   }
   beep(140, 0.3, "sawtooth", 0.08, 70);
 }
+// ---- sniper: telegraphs, then a fast high-damage round ----
+function snipeShot(e) {
+  var a = Math.atan2(player.z - e.z, player.x - e.x);
+  bullets.push({
+    x: e.x + Math.cos(a) * 0.7, y: 0.95, z: e.z + Math.sin(a) * 0.7,
+    dx: Math.cos(a), dz: Math.sin(a), spd: 13, life: 3, foe: true,
+    dmg: Math.round(18 * DIFFS[diff].dmg), tgt: null, pierce: false, hit: null
+  });
+  beep(1250, 0.12, "square", 0.07, 320);
+  spark(e.x + Math.cos(a) * 0.7, 0.95, e.z + Math.sin(a) * 0.7, "#e879f9", 5);
+}
+// ---- healer: pulses health to nearby allies ----
+function healPulse(e) {
+  var i, o, healed = 0;
+  for (i = 0; i < enemies.length; i++) {
+    o = enemies[i];
+    if (o === e || o.hp <= 0 || o.spawnT > 0) continue;
+    if (o.hp < o.maxhp && Math.hypot(o.x - e.x, o.z - e.z) < 4.5) {
+      o.hp = Math.min(o.maxhp, o.hp + Math.round(o.maxhp * 0.18) + 6);
+      spark(o.x, 0.7, o.z, "#a7f3d0", 3);
+      healed++;
+    }
+  }
+  spark(e.x, 0.8, e.z, "#6ee7b7", 8);
+  beep(healed ? 880 : 660, 0.14, "sine", healed ? 0.05 : 0.03, healed ? 1320 : 880);
+}
+// ---- summoner boss: calls in reinforcements ----
+function summonMinions(e) {
+  var k, a, sx, sz;
+  for (k = 0; k < 2; k++) {
+    a = Math.random() * Math.PI * 2;
+    sx = e.x + Math.cos(a) * 1.3; sz = e.z + Math.sin(a) * 1.3;
+    if (blocked(sx, sz, 0.3)) continue;
+    enemies.push({ x: sx, z: sz, type: "grunt", hp: 22 + wave * 5, maxhp: 22 + wave * 5,
+      speed: 1.5 * DIFFS[diff].spd, r: 0.42, cd: 1 + Math.random() * 2, hitT: 0, spawnT: 0.35,
+      wob: Math.random() * 6.28, elite: false, gold: false, shield: 0, charge: 0 });
+  }
+  spark(e.x, 1, e.z, "#f472b6", 14);
+  beep(300, 0.25, "sawtooth", 0.08, 700);
+  toast("SUMMONER CALLS FOR HELP!", 1.6);
+}
 // ---- melee ----
 function melee() {
   if (state !== "play" || meleeCd > 0) return;
@@ -1006,7 +1073,9 @@ function melee() {
     var dx = e.x - player.x, dz = e.z - player.z, d = Math.hypot(dx, dz);
     if (d < 1.8 && Math.abs(angDiff(Math.atan2(dz, dx), player.yaw)) < 1.1) {
       hitEnemy(e, { dmg: 25, dx: fx, dz: fz, w: "melee" });
-      e.x += fx * 0.9; e.z += fz * 0.9;
+      var mkx = e.x + fx * 0.9, mkz = e.z + fz * 0.9;
+      if (!blocked(mkx, e.z, e.r * 0.8)) e.x = mkx;
+      if (!blocked(e.x, mkz, e.r * 0.8)) e.z = mkz;
       hitAny = true;
     }
   }
@@ -1101,15 +1170,15 @@ function die(e, i) {
   if (comboN > runStat.maxCombo) runStat.maxCombo = comboN;
   if (runStat.maxCombo > stats.bestCombo) stats.bestCombo = runStat.maxCombo;
   var mult = Math.min(comboN, 5);
-  var base = e.type === "boss" ? 1000 : (e.type === "tank" ? 250 : (e.type === "runner" ? 80 : (e.type === "splitter" ? 120 : (e.type === "kami" ? 90 : (e.type === "shield" ? 160 : (e.type === "mini" ? 40 : 100))))));
+  var base = (e.type === "boss" || e.type === "summoner") ? 1000 : (e.type === "tank" ? 250 : (e.type === "runner" ? 80 : (e.type === "splitter" ? 120 : (e.type === "kami" ? 90 : (e.type === "shield" ? 160 : (e.type === "mini" ? 40 : (e.type === "sniper" ? 200 : (e.type === "healer" ? 180 : 100))))))));
   var pts = base * mult * (e.elite ? 2 : 1) + (e.gold ? 500 : 0);
   score += pts;
   unlock("first");
   if (comboN >= 5) unlock("combo5");
   if (comboN >= 6) unlock("ramp");
-  if (e.type === "boss") unlock("boss");
+  if (e.type === "boss" || e.type === "summoner") unlock("boss");
   if (score >= 10000) unlock("rich");
-  if (e.type === "boss" && mode === "camp" && campObj && campObj.kind === "boss") campObj.bossDown = true;
+  if ((e.type === "boss" || e.type === "summoner") && mode === "camp" && campObj && campObj.kind === "boss") campObj.bossDown = true;
   if (enemies.length === 0 && state === "play" && mode !== "train") waveCleared();
   scorePops.push({ x: e.x, z: e.z, t: 0, txt: "+" + pts + (mult > 1 ? " x" + mult : "") });
   // splitters divide
@@ -1125,29 +1194,29 @@ function die(e, i) {
     x: e.x, y: 0.4 + Math.random() * 0.6, z: e.z,
     vx: (Math.random() - 0.5) * 4, vy: Math.random() * 4, vz: (Math.random() - 0.5) * 4,
     life: 0.5 + Math.random() * 0.4,
-    c: e.type === "tank" ? "#a855f7" : (e.type === "runner" ? "#fb923c" : (e.type === "kami" ? "#ef4444" : (e.type === "shield" ? "#3b82f6" : (e.type === "splitter" ? "#14b8a6" : "#4ade80")))), s: 0.09
+    c: (e.type === "tank" || e.type === "summoner") ? "#a855f7" : (e.type === "runner" ? "#fb923c" : (e.type === "kami" ? "#ef4444" : (e.type === "shield" ? "#3b82f6" : (e.type === "splitter" ? "#14b8a6" : (e.type === "sniper" ? "#e879f9" : (e.type === "healer" ? "#6ee7b7" : "#4ade80")))))), s: 0.09
   });
   beep(160, 0.2, "square", 0.09, 60);
 }
 function dropLoot(e) {
-  if (e.type === "boss") {
-    pickups.push({ x: e.x, z: e.z, kind: "medkit", sub: null, t: 0 });
-    pickups.push({ x: e.x + 0.7, z: e.z + 0.4, kind: "nade", sub: null, t: 0 });
-    pickups.push({ x: e.x - 0.6, z: e.z + 0.5, kind: "star", sub: null, t: 0 });
-    if (player.up < 3 && Math.random() < 0.6) pickups.push({ x: e.x, z: e.z + 0.9, kind: "upgrade", sub: null, t: 0 });
-    else if (Math.random() < 0.25) pickups.push({ x: e.x, z: e.z + 0.9, kind: "drone", sub: null, t: 0 });
+  if (e.type === "boss" || e.type === "summoner") {
+    addDrop(e.x, e.z, "medkit", null);
+    addDrop(e.x + 0.7, e.z + 0.4, "nade", null);
+    addDrop(e.x - 0.6, e.z + 0.5, "star", null);
+    if (player.up < 3 && Math.random() < 0.6) addDrop(e.x, e.z + 0.9, "upgrade", null);
+    else if (Math.random() < 0.25) addDrop(e.x, e.z + 0.9, "drone", null);
     else {
       var bsub = player.owned.spread ? (player.owned.rifle ? (player.owned.beam ? null : "beam") : "rifle") : "spread";
-      if (bsub) pickups.push({ x: e.x, z: e.z + 0.9, kind: "weapon", sub: bsub, t: 0 });
-      else pickups.push({ x: e.x, z: e.z + 0.9, kind: "ammo", sub: "cores", t: 0 });
+      if (bsub) addDrop(e.x, e.z + 0.9, "weapon", bsub);
+      else addDrop(e.x, e.z + 0.9, "ammo", "cores");
     }
     return;
   }
   if (e.elite) {
-    pickups.push({ x: e.x, z: e.z, kind: "star", sub: null, t: 0 });
-    if (Math.random() < 0.35) pickups.push({ x: e.x + 0.6, z: e.z + 0.3, kind: "upgrade", sub: null, t: 0 });
-    else if (Math.random() < 0.3) pickups.push({ x: e.x + 0.6, z: e.z + 0.3, kind: "shield", sub: null, t: 0 });
-    else if (Math.random() < 0.3) pickups.push({ x: e.x + 0.6, z: e.z + 0.3, kind: "cluster", sub: null, t: 0 });
+    addDrop(e.x, e.z, "star", null);
+    if (Math.random() < 0.35) addDrop(e.x + 0.6, e.z + 0.3, "upgrade", null);
+    else if (Math.random() < 0.3) addDrop(e.x + 0.6, e.z + 0.3, "shield", null);
+    else if (Math.random() < 0.3) addDrop(e.x + 0.6, e.z + 0.3, "cluster", null);
     if (e.gold) setObjMsg("BOUNTY CLAIMED! +500", 2.5);
     return;
   }
@@ -1175,7 +1244,7 @@ function dropLoot(e) {
     sub = unowned.length ? unowned[Math.floor(Math.random() * unowned.length)] : null;
     if (!sub) { kind = "ammo"; sub = "cells"; }
   }
-  if (kind) pickups.push({ x: e.x, z: e.z, kind: kind, sub: sub, t: 0 });
+  if (kind) addDrop(e.x, e.z, kind, sub);
 }
 function grantWeapon(w) {
   player.owned[w] = true;
@@ -1399,6 +1468,7 @@ function resetAll() {
 
 // ================= menus =================
 var MSC = null, menuIdx = 0, menuRows = [], resetArm = 0;
+var seedMode = false, seedBuf = "";
 function openMenu(m) { MSC = m; menuIdx = 0; resetArm = 0; if (state !== "over") state = "menu"; }
 function backTarget() { return paused ? "pause" : "title"; }
 function goBack() {
@@ -1428,6 +1498,7 @@ function menuItems() {
     items.push({ t: "CAMPAIGN", a: function () { campLvl = 1; openMenu("campaign"); } });
     items.push({ t: "DAILY CHALLENGE" + (daily.day === Math.floor(Date.now() / 86400000) ? " (BEST " + daily.best + ")" : ""), a: function () { startGame("daily"); } });
     items.push({ t: "TRAINING RANGE", a: function () { startGame("train"); } });
+    items.push({ t: "CUSTOM SEED", a: function () { seedMode = true; seedBuf = ""; } });
     items.push({ t: "SETTINGS", a: function () { openMenu("settings"); } });
     items.push({ t: "STATISTICS", a: function () { openMenu("stats"); } });
     items.push({ t: "LEADERBOARD", a: function () { openMenu("board"); } });
@@ -1768,6 +1839,11 @@ function update(dt) {
     en.wob += dt * 6;
     var edx = player.x - en.x, edz = player.z - en.z;
     var edist = Math.hypot(edx, edz) || 0.001;
+    if (isWall(Math.floor(en.x), Math.floor(en.z))) { // safety net: never stay stuck in a wall
+      var ux = en.x + edx / edist * 0.2, uz = en.z + edz / edist * 0.2;
+      if (!blocked(ux, en.z, en.r * 0.8)) en.x = ux;
+      if (!blocked(en.x, uz, en.r * 0.8)) en.z = uz;
+    }
     var mvx = 0, mvz = 0;
     if (en.type === "dummy") {
       // stationary training target
@@ -1782,7 +1858,21 @@ function update(dt) {
         if (ki >= 0) die(en, ki);
         continue;
       }
-    } else if (en.type === "boss") {
+    } else if (en.type === "sniper") {
+      // hold a firing lane: back off if too close, close in if too far
+      if (edist < 9) { mvx = -edx / edist; mvz = -edz / edist; }
+      else if (edist > 13) { mvx = edx / edist; mvz = edz / edist; }
+      if (en.charge > 0) {
+        en.charge -= dt;
+        if (en.charge <= 0) { snipeShot(en); en.cd = 2.4; }
+      } else if (en.cd <= 0 && edist < 22) {
+        en.charge = 0.9; // telegraphed wind-up
+        beep(1400, 0.06, "square", 0.04, 900);
+      }
+    } else if (en.type === "healer") {
+      if (edist < 6.5) { mvx = -edx / edist; mvz = -edz / edist; } // keep its distance
+      if (en.cd <= 0) { en.cd = 2.6; healPulse(en); }
+    } else if (en.type === "boss" || en.type === "summoner") {
       if (!en.p2 && en.hp < en.maxhp / 2) {
         en.p2 = true; en.speed *= 1.35; en.cd = 1;
         toast("BOSS ENRAGED!", 2);
@@ -1790,7 +1880,11 @@ function update(dt) {
         spark(en.x, 1, en.z, "#ef4444", 20);
       }
       if (edist > 9) { mvx = edx / edist; mvz = edz / edist; }
-      else if (en.cd <= 0) { en.cd = en.p2 ? 2 : 3; bossBurst(en); }
+      else if (en.cd <= 0) {
+        en.cd = en.p2 ? 2 : 3;
+        if (en.type === "summoner" && enemies.length < 22) summonMinions(en);
+        else bossBurst(en);
+      }
     } else {
       if (edist > 7.5) { mvx = edx / edist; mvz = edz / edist; }
       else if (en.cd <= 0) { en.cd = 2.2; spit(en); }
@@ -1861,7 +1955,7 @@ function update(dt) {
   for (i = pickups.length - 1; i >= 0; i--) {
     var pk = pickups[i];
     pk.t += dt;
-    if ((pk.x - player.x) * (pk.x - player.x) + (pk.z - player.z) * (pk.z - player.z) < 0.6) {
+    if ((pk.x - player.x) * (pk.x - player.x) + (pk.z - player.z) * (pk.z - player.z) < 0.9) {
       if (pk.kind === "medkit") {
         player.hp = Math.min(player.maxhp, player.hp + 35);
         setObjMsg("MEDKIT  +35 HP", 2);
@@ -2080,20 +2174,40 @@ function render() {
     var e = enemies[i];
     var ed = Math.hypot(e.x - cam.x, e.z - cam.z);
     if (ed > 34) continue;
-    var isBig = e.type === "tank" || e.type === "boss" || e.type === "shield";
-    var bmp = (e.type === "boss" || e.type === "tank") ? TANK_BMP : (e.type === "runner" ? RUNNER_BMP : GRUNT_BMP);
-    var hw = e.type === "boss" ? 1.8 : (e.type === "tank" ? 1.35 : (e.type === "runner" ? 0.85 : (e.type === "mini" ? 0.55 : (e.type === "splitter" ? 0.95 : (e.type === "shield" ? 1.3 : (e.type === "dummy" ? 1.05 : 1))))));
+    var isBig = e.type === "tank" || e.type === "boss" || e.type === "summoner" || e.type === "shield";
+    var bmp = (e.type === "boss" || e.type === "tank" || e.type === "summoner") ? TANK_BMP : (e.type === "runner" ? RUNNER_BMP : GRUNT_BMP);
+    var hw = (e.type === "boss" || e.type === "summoner") ? 1.8 : (e.type === "tank" ? 1.35 : (e.type === "runner" ? 0.85 : (e.type === "mini" ? 0.55 : (e.type === "splitter" ? 0.95 : (e.type === "shield" ? 1.3 : (e.type === "dummy" ? 1.05 : (e.type === "sniper" ? 1.0 : (e.type === "healer" ? 0.95 : 1))))))));
     var pal = e.hitT > 0 ? PAL_FLASH : null;
     if (!pal && e.type === "splitter") pal = PAL_SPLIT;
     if (!pal && e.type === "shield") pal = PAL_SHIELD;
+    if (!pal && e.type === "sniper") pal = PAL_SNIPER;
+    if (!pal && e.type === "healer") pal = PAL_HEALER;
+    if (!pal && e.type === "summoner") pal = PAL_SUMMONER;
     if (!pal && e.type === "kami") pal = Math.hypot(e.x - player.x, e.z - player.z) < 3.2 && Math.floor(time * 8) % 2 === 0 ? PAL_KAMI_HOT : PAL_KAMI;
     if (!pal && e.type === "dummy") pal = PAL_DUMMY;
     var prog = e.spawnT > 0 ? 1 - e.spawnT / 0.5 : 1;
     var ex = e.x, ez = e.z, ey = (1 - prog) * -0.4, ew = hw * prog;
-    var emax = e.maxhp, ehp = e.hp, et = isBig, esh = e.shield, eel = e.elite, egd = e.gold;
-    items.push({ d: ed, draw: (function (ex, ez, ey, ew, bmp, pal, prog, ehp, emax, et, esh, eel, egd) {
+    var emax = e.maxhp, ehp = e.hp, et = isBig, esh = e.shield, eel = e.elite, egd = e.gold, etyp = e.type, ech = e.charge || 0;
+    items.push({ d: ed, draw: (function (ex, ez, ey, ew, bmp, pal, prog, ehp, emax, et, esh, eel, egd, etyp, ech) {
       return function () {
         drawShadow(ex, ez, eel ? 0.55 : 0.45);
+        if (etyp === "healer") {
+          var hb = toCam(ex, 0.03, ez);
+          if (hb[2] > NEAR) {
+            var hbs = projC(hb);
+            ctx.strokeStyle = "rgba(110,231,183,0.45)";
+            ctx.beginPath(); ctx.ellipse(hbs[0], hbs[1], FOCAL * 1.7 / hb[2], FOCAL * 0.6 / hb[2], 0, 0, 7); ctx.stroke();
+          }
+        }
+        if (etyp === "sniper" && ech > 0) {
+          var t1 = toCam(ex, 0.95, ez), t2 = toCam(player.x, 0.95, player.z);
+          if (t1[2] > NEAR && t2[2] > NEAR) {
+            var q1 = projC(t1), q2 = projC(t2);
+            ctx.strokeStyle = "rgba(232,121,249," + (0.30 + 0.55 * (1 - ech / 0.9)).toFixed(2) + ")";
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q2[0], q2[1]); ctx.stroke();
+          }
+        }
         if (eel) {
           var ec = toCam(ex, 0.03, ez);
           if (ec[2] > NEAR) {
@@ -2130,7 +2244,7 @@ function render() {
           }
         }
       };
-    })(ex, ez, ey, ew, bmp, pal, prog, ehp, emax, et, esh, eel, egd) });
+    })(ex, ez, ey, ew, bmp, pal, prog, ehp, emax, et, esh, eel, egd, etyp, ech) });
   }
 
   // secret chests
@@ -2411,6 +2525,7 @@ function render() {
   else if (state === "menu") drawMenuScreen();
   else if (state === "over") drawGameOver();
   else if (state === "photo") drawPhotoHint();
+  if (seedMode) drawSeedEntry();
 
   if (toastT > 0) {
     ctx.textAlign = "center";
@@ -2452,8 +2567,8 @@ function drawMinimap() {
     var en2 = enemies[i];
     var ex2 = (en2.x - player.x) * sc, ez2 = (en2.z - player.z) * sc;
     if (Math.abs(ex2) > half - 2 || Math.abs(ez2) > half - 2) continue;
-    ctx.fillStyle = en2.type === "boss" ? "#ef4444" : (en2.type === "tank" ? "#a855f7" : (en2.type === "runner" ? "#fb923c" : (en2.type === "shield" ? "#3b82f6" : (en2.type === "splitter" ? "#14b8a6" : (en2.type === "kami" ? "#ef4444" : "#4ade80")))));
-    var esz = en2.type === "boss" ? 5.5 : 3.5;
+    ctx.fillStyle = (en2.type === "boss" || en2.type === "summoner") ? "#ef4444" : (en2.type === "tank" ? "#a855f7" : (en2.type === "runner" ? "#fb923c" : (en2.type === "shield" ? "#3b82f6" : (en2.type === "splitter" ? "#14b8a6" : (en2.type === "kami" ? "#ef4444" : (en2.type === "sniper" ? "#e879f9" : (en2.type === "healer" ? "#6ee7b7" : "#4ade80")))))));
+    var esz = (en2.type === "boss" || en2.type === "summoner") ? 5.5 : 3.5;
     ctx.fillRect(cxm + ex2 - esz / 2, cym + ez2 - esz / 2, esz, esz);
   }
   for (i = 0; i < pickups.length; i++) {
@@ -2741,7 +2856,7 @@ function drawTitle() {
   ctx.fillText("NEW ARENA", W - 6, 16);
   ctx.textAlign = "center";
   ctx.fillStyle = "#a5f3fc";
-  ctx.fillText("BOSSES * BIOMES * GRENADES * SHOP * DAILY", W / 2, 60);
+  ctx.fillText("BOSSES * BIOMES * SNIPERS * SHOP * DAILY", W / 2, 60);
   drawRows(items, 74, 11);
   ctx.font = "bold 8px monospace";
   ctx.fillStyle = "#94a3b8";
@@ -2782,6 +2897,23 @@ function drawGameOver() {
   ctx.fillStyle = "#7dd3fc";
   ctx.fillText("ACHIEVEMENTS " + achCount() + "/14   ARENA " + seedStr() + "   DIFF " + DIFFS[diff].name, W / 2, 100);
   drawRows(items, 118, 11);
+}
+function drawSeedEntry() {
+  menuRows = [];
+  ctx.fillStyle = "rgba(5,5,16,0.9)";
+  ctx.fillRect(-8, -8, W + 16, H + 16);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.font = "bold 12px monospace";
+  ctx.fillStyle = "#e879f9";
+  ctx.fillText("CUSTOM ARENA SEED", W / 2, 58);
+  ctx.font = "bold 14px monospace";
+  ctx.fillStyle = "#fde047";
+  ctx.fillText((seedBuf || "") + (Math.floor(time * 2) % 2 ? "_" : " "), W / 2, 88);
+  ctx.font = "bold 8px monospace";
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillText("TYPE A SEED (A-Z 0-9)", W / 2, 118);
+  ctx.fillText("ENTER: PLAY   ESC: BACK", W / 2, 130);
 }
 function drawPhotoHint() {
   ctx.fillStyle = "rgba(5,5,16,0.5)";
@@ -2874,6 +3006,7 @@ function handleTouchStart(ev) {
   var i, tt;
   ev.preventDefault();
   if (rotateEl && rotateEl.classList.contains("show")) return;
+  if (seedMode) return; // seed entry uses a keyboard
   initAudio();
   enableTouch();
   var r = touchEl.getBoundingClientRect();
@@ -3015,6 +3148,20 @@ touchEl.addEventListener("contextmenu", function (e) { e.preventDefault(); });
 window.addEventListener("keydown", function (e) {
   initAudio();
   if (["Space", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Tab"].indexOf(e.code) >= 0) e.preventDefault();
+  if (seedMode) { // custom arena seed entry
+    if (e.code === "Escape") { seedMode = false; return; }
+    if (e.code === "Enter") {
+      if (seedBuf.length) {
+        var sv = 0, ci;
+        for (ci = 0; ci < seedBuf.length; ci++) sv = (sv * 31 + seedBuf.charCodeAt(ci)) | 0;
+        arenaSeed = sv || 1; seedMode = false; startGame("endless");
+      }
+      return;
+    }
+    if (e.code === "Backspace") { seedBuf = seedBuf.slice(0, -1); return; }
+    if (e.key && e.key.length === 1 && seedBuf.length < 12 && /[a-zA-Z0-9]/.test(e.key)) { seedBuf += e.key.toUpperCase(); }
+    return;
+  }
   keys[e.code] = true;
   // menu navigation
   if (state === "title" || state === "menu" || state === "over") {

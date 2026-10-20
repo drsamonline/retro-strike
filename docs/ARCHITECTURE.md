@@ -61,9 +61,15 @@ machine: `title → play ⇄ menu → over`, plus `photo`.
 - **Player** — position, yaw, velocity, HP, shield, stamina, weapon, ammo,
   throwables, upgrade level, drone flag.
 - **Enemies** — a type table drives HP/speed/radius/behaviour: `grunt`,
-  `runner`, `tank`, `splitter`, `kami`, `shield`, `boss`, `dummy`. Elites and
-  gold bounty variants are flags on the same objects. A simple separation pass
-  keeps them from stacking.
+  `runner`, `tank`, `splitter`, `kami`, `shield`, `sniper`, `healer`, `boss`,
+  `summoner`, `dummy`. Elites and gold bounty variants are flags on the same
+  objects. A simple separation pass keeps them from stacking. The **Sniper**
+  runs a charge timer (`en.charge`) it telegraphs before firing; the **Healer**
+  pulses heals to nearby allies on a cooldown; the **Summoner** boss spawns
+  grunts when its cooldown fires instead of bursting.
+- **Drops** — `dropLoot` routes every pickup through `addDrop` → `openSpot`,
+  which snaps loot to the nearest walkable tile so it can never land inside a
+  wall.
 - **Projectiles** — one bullet list for both sides, with an optional homing
   target (aim assist) and a pierce flag; the player's beam marks each enemy it
   has already scored.

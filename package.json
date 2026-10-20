@@ -1,6 +1,6 @@
 {
   "name": "retro-strike",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "description": "A complete retro third-person shooter in a single HTML file — custom software 3D renderer, chiptune audio, zero dependencies.",
   "keywords": ["game", "canvas", "javascript", "html5", "shooter", "retro", "single-file", "webgl-free"],

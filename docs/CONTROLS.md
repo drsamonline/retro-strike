@@ -30,6 +30,7 @@ All bindings can be reached from the in-game **Settings** menu where noted.
 | Buy shop item | `1`–`0` *(during intermission)* |
 | Menu navigation | `↑` `↓` + `Enter`; `Esc` to go back |
 | Title: change difficulty / new arena | `D` / `N` |
+| Title: custom arena seed | **CUSTOM SEED** → type `A–Z 0–9`, `Enter` to play, `Esc` to cancel |
 
 > ⌨️ An **AZERTY (ZQSD)** preset is available in Settings → Keyboard.
 
