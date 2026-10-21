@@ -270,7 +270,7 @@ See [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) for the measured before/after.
 
 2. **Make the badges yours** — find-and-replace every `drsamonline/retro-strike` in `README.md` with your GitHub username and repo name (the banner, star/issue badges and the **▶️ Play** link all use it).
 
-3. **Turn on the live demo** — go to **Settings → Pages → Build and deployment → Source: GitHub Actions**. The included workflow (`.github/workflows/pages.yml`) deploys the minified build to `https://drsamonline.github.io/retro-strike/` on every push to `main`.
+3. **Turn on the live demo** — go to **Settings → Pages → Build and deployment → Source: Deploy from a branch**, then pick the `main` branch and the `/docs` folder. The site is served from the `docs/` folder on `main` via the legacy Pages build and is published at `https://drsamonline.github.io/retro-strike/`.
 
 4. **Cut a release** — create a tag and attach `dist/retro-strike.min.html` as the release asset so players can download a single file:
 
