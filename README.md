@@ -23,7 +23,6 @@
 
 <img src="assets/banner.png" alt="RETRO STRIKE — retro 3rd-person shooter" width="860">
 
-# 🎮 RETRO STRIKE
 
 **A complete retro-styled third-person shooter that lives inside a single HTML file.**
 No engine, no build step, no dependencies — a custom software 3D renderer, a chiptune synth and a procedural arena, all in one document.
