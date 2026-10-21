@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>404 — Nothing spawned here | RETRO STRIKE</title>
+<meta name="description" content="That arena tile is empty. Head back to the RETRO STRIKE landing page and load up the game.">
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="/retro-strike/assets/logo.png" type="image/png">
+<style>
+  :root{--ink:#0e0a08;--char:#1a1310;--panel:#2b1e17;--panel-hi:#4a3527;--panel-lo:#150e0a;--amber:#ff8a00;--amber-hot:#ffb347;--amber-deep:#b35c00;--bone:#f3ead8;--bone-dim:#c9bda6}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:
+      radial-gradient(900px 420px at 70% 10%, rgba(255,138,0,.18), rgba(255,138,0,0) 60%),
+      linear-gradient(180deg,#120c09,#1d1511 70%,#241a15);
+    color:var(--bone);font-family:"Trebuchet MS","Segoe UI",Tahoma,Verdana,sans-serif;padding:24px;text-align:center}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;
+    background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,rgba(0,0,0,0) 1px 3px);opacity:.9}
+  .box{position:relative;max-width:640px;padding:44px 34px;
+    background:linear-gradient(180deg,var(--panel),#241a15);
+    border:4px solid;border-color:var(--panel-hi) var(--panel-lo) var(--panel-lo) var(--panel-hi);
+    box-shadow:0 0 0 2px var(--ink),0 14px 0 -6px rgba(0,0,0,.55)}
+  .code404{font-family:"Courier New",monospace;font-size:clamp(3rem,14vw,6rem);font-weight:900;color:var(--amber);
+    text-shadow:0 4px 0 #4a2700,0 0 30px rgba(255,138,0,.4);line-height:1;margin:0}
+  h1{font-size:1.5rem;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px}
+  p{color:var(--bone-dim);margin:0 0 26px}
+  a.btn{display:inline-flex;align-items:center;gap:.6em;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--ink);text-decoration:none;background:linear-gradient(180deg,var(--amber-hot),var(--amber) 55%,var(--amber-deep));
+    border:4px solid;border-color:#ffd08a #7a3d00 #7a3d00 #ffd08a;box-shadow:0 0 0 2px var(--ink),0 8px 0 -2px rgba(0,0,0,.6);
+    padding:.85em 1.5em}
+  a.btn:hover{filter:brightness(1.08)}
+  a.alt{display:inline-block;margin-left:14px;color:var(--bone-dim);font-family:"Courier New",monospace;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em}
+  a.alt:hover{color:var(--amber-hot)}
+</style>
+</head>
+<body>
+  <main class="box">
+    <p class="code404">404</p>
+    <h1>Nothing spawned here</h1>
+    <p>That arena tile is empty — the page you asked for doesn't exist. Head back to base and load up the game.</p>
+    <a class="btn" href="/retro-strike/">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+      Back to home
+    </a>
+    <a class="alt" href="/retro-strike/play/">or play now</a>
+  </main>
+</body>
+</html>

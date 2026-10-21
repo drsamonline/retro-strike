@@ -1,5 +1,26 @@
 <div align="center">
 
+# 🎮 RETRO STRIKE
+
+**A complete retro-styled third-person shooter that lives inside a single HTML file — no engine, no build step, no dependencies.**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-3DA639.svg?style=flat-square)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.4.0-ff8a00.svg?style=flat-square)](CHANGELOG.md)
+[![Dependencies](https://img.shields.io/badge/dependencies-0-4ade80.svg?style=flat-square)](#-tech)
+[![Stars](https://img.shields.io/github/stars/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/stargazers)
+[![Forks](https://img.shields.io/github/forks/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/network/members)
+[![Last commit](https://img.shields.io/github/last-commit/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/commits)
+
+### [🏠 Landing page](https://drsamonline.github.io/retro-strike/) &nbsp;·&nbsp; [▶️ Play the live demo](https://drsamonline.github.io/retro-strike/play/) &nbsp;·&nbsp; [📦 Source](https://github.com/drsamonline/retro-strike)
+
+<sub>A custom software 3D renderer, a live chiptune synth and procedural arenas — all in one document.</sub>
+
+</div>
+
+---
+
+<div align="center">
+
 <img src="assets/banner.png" alt="RETRO STRIKE — retro 3rd-person shooter" width="860">
 
 # 🎮 RETRO STRIKE
@@ -23,7 +44,7 @@ No engine, no build step, no dependencies — a custom software 3D renderer, a c
 [![Issues](https://img.shields.io/github/issues/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/issues)
 [![Last commit](https://img.shields.io/github/last-commit/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/commits)
 
-### [▶️ &nbsp;PLAY IN YOUR BROWSER](https://drsamonline.github.io/retro-strike/)
+### [▶️ &nbsp;PLAY IN YOUR BROWSER](https://drsamonline.github.io/retro-strike/play/)
 
 <sub>Point the two links above at your own repo — see <a href="#-publishing">Publishing</a>.</sub>
 
