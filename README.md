@@ -13,6 +13,8 @@
 
 ### [🏠 Landing page](https://drsamonline.github.io/retro-strike/) &nbsp;·&nbsp; [▶️ Play the live demo](https://drsamonline.github.io/retro-strike/play/) &nbsp;·&nbsp; [📦 Source](https://github.com/drsamonline/retro-strike)
 
+**Download:** [Windows (.exe)](https://github.com/drsamonline/retro-strike/releases/latest/download/retro-strike-portable.exe) &nbsp;·&nbsp; [Android (.apk)](https://github.com/drsamonline/retro-strike/releases/latest/download/retro-strike.apk)
+
 <sub>A custom software 3D renderer, a live chiptune synth and procedural arenas — all in one document.</sub>
 
 </div>
