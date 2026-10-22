@@ -11,7 +11,7 @@
 [![Forks](https://img.shields.io/github/forks/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/network/members)
 [![Last commit](https://img.shields.io/github/last-commit/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/commits)
 
-### [🏠 Landing page](https://drsamonline.github.io/retro-strike/) &nbsp;·&nbsp; [▶️ Play the live demo](https://drsamonline.github.io/retro-strike/play/) &nbsp;·&nbsp; [📦 Source](https://github.com/drsamonline/retro-strike)
+### [🏠 Landing page](https://drsamonline.github.io/retro-strike/) &nbsp;·&nbsp; [▶️ Play the live demo](https://drsamonline.github.io/retro-strike/play/) &nbsp;·&nbsp; [📦 Source](https://github.com/drsamonline/retro-strike) &nbsp;·&nbsp; [🧭 All projects](https://drsamonline.github.io/)
 
 **Download:** [Windows (.exe)](https://github.com/drsamonline/retro-strike/releases/latest/download/retro-strike-portable.exe) &nbsp;·&nbsp; [Android (.apk)](https://github.com/drsamonline/retro-strike/releases/latest/download/retro-strike.apk)
 
