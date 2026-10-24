@@ -1,0 +1,30 @@
+# Test — the repo's regression guard.
+#
+# SPDX-FileCopyrightText: 2026 Dr Sohil Momin
+# SPDX-License-Identifier: MIT
+#
+# Runs tools/test.mjs: the game is one self-contained document, it makes no
+# external request, the build runs and shrinks it, and the deployed demo
+# (docs/play/index.html) IS the built artifact — so the live page can never
+# silently serve a stale build.
+
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install build dependency
+        run: npm install --no-audit --no-fund
+      - name: Run tests
+        run: node tools/test.mjs

@@ -5,8 +5,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import terser from 'terser';                 // default import = safest CJS/ESM interop
-const { minify } = terser;
+import { minify } from 'terser';             // terser's ESM entry exports `minify` (no default)
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = resolve(root, 'src/retro-strike.html');
