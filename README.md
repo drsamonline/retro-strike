@@ -2,6 +2,12 @@
 
 # 🎮 RETRO STRIKE
 
+<!-- shot:start -->
+
+![Screenshot](docs/shot.png)
+
+<!-- shot:end -->
+
 **A complete retro-styled third-person shooter that lives inside a single HTML file — no engine, no build step, no dependencies.**
 
 [![License: MIT](https://img.shields.io/badge/License-PolyForm_Noncommercial_1.0.0-3DA639.svg?style=flat-square)](LICENSE)
