@@ -10,7 +10,7 @@
 
 **A complete retro-styled third-person shooter that lives inside a single HTML file — no engine, no build step, no dependencies.**
 
-[![License: MIT](https://img.shields.io/badge/License-PolyForm_Noncommercial_1.0.0-3DA639.svg?style=flat-square)](LICENSE)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm_Noncommercial_1.0.0-3DA639.svg?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.4.0-ff8a00.svg?style=flat-square)](CHANGELOG.md)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-4ade80.svg?style=flat-square)](#-tech)
 [![Stars](https://img.shields.io/github/stars/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/stargazers)
