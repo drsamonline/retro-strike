@@ -3,6 +3,17 @@
 All notable changes to **RETRO STRIKE** are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.4.1] — 2026-11-05
+
+A saved run is data, and the game used to trust it.
+
+### Fixed
+- 🐛 **A bad save bricked CONTINUE.** `continueRun()` handed the file straight to the game — `player = s.player`, then `player.x` — so a save written by an older build, edited by hand, or cut short by a full disk threw on the CONTINUE click, and kept throwing, because the save is only cleared by QUIT TO TITLE. The only way out was "reset all data", which a player has no reason to find. `cleanSave()` is now the one gate: it rebuilds a save the game can actually run — position inside the arena it is restored into, hp inside maxhp, a real weapon, numbers that are numbers — or refuses the file, throws it away and says **SAVE UNREADABLE — NEW RUN**.
+- 🐛 **"SAVE & QUIT" could silently throw the run away.** When storage was full, `saveRun()` returned false and the game quit to the title anyway, with no message. It now says **COULD NOT SAVE — RUN KEPT** and leaves you in the run, so the run is only lost if you choose to lose it.
+
+### Added
+- 🧪 `tools/test-save.mjs` — 49 assertions, in CI. It lifts `cleanSave()` out of the shipped source (so it tests the real function, not a copy) and runs it against 13 hostile saves, then scans the cleaned result for any non-finite number. It also asserts the old code path *did* throw on the same input, so the bug stays in the record rather than in a memory.
+
 ## [1.4.0] — 2026-10-20
 
 The whole remaining roadmap, implemented. Still single-player only — no servers, ever.

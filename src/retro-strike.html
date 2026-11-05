@@ -1531,6 +1531,91 @@ function endRun() {
     // campaign fail: retry same level
   }
 }
+// ---- save hygiene: a save is DATA, never trusted ----
+// continueRun() used to hand the file straight to the game — `player = s.player`,
+// then `player.x` — so a save written by an older build, edited by hand, or cut
+// short by a full disk threw on the CONTINUE click, and kept throwing, because the
+// save is only cleared by QUIT TO TITLE. cleanSave() is the one gate: it rebuilds a
+// save the game can actually run, or returns null so the caller starts clean.
+// Self-contained on purpose — tools/test-save.mjs lifts this function out of the
+// source and runs it against hostile input.
+function cleanSave(s, size) {
+  function num(v, d, lo, hi) {
+    v = (typeof v === "number" && isFinite(v)) ? v : d;
+    if (v < lo) v = lo;
+    if (v > hi) v = hi;
+    return v;
+  }
+  function arr(v) { return Array.isArray(v) ? v : []; }
+  function flags(v) { return arr(v).map(function (b) { return !!b; }); }
+  function objs(v) { return arr(v).filter(function (o) { return o && typeof o === "object" && !Array.isArray(o); }); }
+  if (!s || typeof s !== "object" || Array.isArray(s)) return null;
+  var p = s.player;
+  if (!p || typeof p !== "object" || Array.isArray(p)) return null;
+  size = (typeof size === "number" && isFinite(size) && size >= 48 && size <= 256) ? size : 48;
+  var x = num(p.x, NaN, 1, size - 1), z = num(p.z, NaN, 1, size - 1);
+  if (!isFinite(x) || !isFinite(z)) return null; // no position, no run
+  var WEAP = { blaster: 1, spread: 1, rifle: 1, beam: 1 };
+  var TYPES = { grunt: 1, runner: 1, tank: 1, splitter: 1, kami: 1, shield: 1,
+                sniper: 1, healer: 1, mini: 1, dummy: 1, boss: 1, summoner: 1 };
+  var owned = { blaster: true }, w;
+  if (p.owned && typeof p.owned === "object" && !Array.isArray(p.owned)) for (w in WEAP) if (p.owned[w]) owned[w] = true;
+  var ammo = (p.ammo && typeof p.ammo === "object") ? p.ammo : {};
+  var maxhp = Math.round(num(p.maxhp, 100, 1, 1000));
+  var rs = (s.runStat && typeof s.runStat === "object") ? s.runStat : {};
+  return {
+    arenaSeed: num(s.arenaSeed, 0, -2147483648, 2147483647) | 0,
+    diff: Math.round(num(s.diff, 1, 0, 2)),
+    time: num(s.time, 0, 0, 1e7),
+    score: Math.round(num(s.score, 0, 0, 1e9)),
+    kills: Math.round(num(s.kills, 0, 0, 1e7)),
+    wave: Math.round(num(s.wave, 1, 1, 1e5)),
+    secretsFound: Math.round(num(s.secretsFound, 0, 0, 1e4)),
+    secretsFoundFlags: flags(s.secretsFoundFlags),
+    deadBarrels: flags(s.deadBarrels),
+    // an enemy with no readable position cannot be placed, so it is dropped rather
+    // than turned into a NaN standing somewhere on the map
+    enemies: arr(s.enemies).filter(function (e) {
+      return e && typeof e === "object" && !Array.isArray(e) &&
+             typeof e.x === "number" && isFinite(e.x) && typeof e.z === "number" && isFinite(e.z);
+    }).map(function (e) {
+      var mh = Math.round(num(e.maxhp, 1, 1, 1e6));
+      return {
+        x: num(e.x, 0, 0, size), z: num(e.z, 0, 0, size),
+        type: TYPES[e.type] ? e.type : "grunt",
+        hp: Math.round(num(e.hp, mh, 0, mh)), maxhp: mh,
+        speed: num(e.speed, 1, 0, 20), r: num(e.r, 0.42, 0.1, 3),
+        cd: num(e.cd, 1, 0, 60), hitT: num(e.hitT, 0, 0, 10),
+        spawnT: num(e.spawnT, 0, 0, 10), wob: num(e.wob, 0, -1e3, 1e3),
+        charge: num(e.charge, 0, 0, 10), shield: num(e.shield, 0, 0, 1e6),
+        elite: !!e.elite, gold: !!e.gold
+      };
+    }),
+    // transient: a bad bullet misplaces a particle, it cannot stop the run
+    bullets: objs(s.bullets), pickups: objs(s.pickups), nades: objs(s.nades), mines: objs(s.mines),
+    runStat: {
+      buys: Math.round(num(rs.buys, 0, 0, 1e5)),
+      nadeKills: Math.round(num(rs.nadeKills, 0, 0, 1e5)),
+      maxCombo: Math.round(num(rs.maxCombo, 0, 0, 1e5))
+    },
+    player: {
+      x: x, z: z, yaw: num(p.yaw, 0, -1e4, 1e4),
+      hp: Math.round(num(p.hp, maxhp, 0, maxhp)), maxhp: maxhp,
+      weapon: owned[p.weapon] ? p.weapon : "blaster",
+      owned: owned,
+      ammo: {
+        shells: Math.round(num(ammo.shells, 0, 0, 9999)),
+        cells: Math.round(num(ammo.cells, 0, 0, 9999)),
+        cores: Math.round(num(ammo.cores, 0, 0, 9999))
+      },
+      nades: Math.round(num(p.nades, 0, 0, 99)), mines: Math.round(num(p.mines, 0, 0, 99)),
+      cluster: Math.round(num(p.cluster, 0, 0, 99)),
+      shield: Math.round(num(p.shield, 0, 0, 50)), stam: num(p.stam, 1, 0, 1),
+      up: Math.round(num(p.up, 0, 0, 9)),
+      drone: !!p.drone, vx: 0, vz: 0, fireCd: 0, recoil: 0, hurtT: 0, flash: 0
+    }
+  };
+}
 // ---- mid-run save / continue ----
 function saveRun() {
   if ((!paused && state !== "play") || mode === "train" || mode === "camp") return false;
@@ -1553,14 +1638,21 @@ function hasSave() {
 function continueRun() {
   var s;
   try { s = JSON.parse(localStorage.getItem("retroStrikeSave") || "null"); } catch (e) { s = null; }
-  if (!s) { startGame("endless"); return; }
+  s = cleanSave(s, MS);
+  if (!s) {
+    // an unreadable save is not a run: throw the bad file away and say so
+    clearSave();
+    toast("SAVE UNREADABLE - NEW RUN", 2.6);
+    startGame("endless");
+    return;
+  }
   mode = "cont"; paused = false; MSC = null;
-  arenaSeed = s.arenaSeed; diff = s.diff || 1;
+  arenaSeed = s.arenaSeed; diff = s.diff;
   genMap();
   player = s.player;
   if (blocked(player.x, player.z, 0.32)) { var ops = openSpot(player.x, player.z); player.x = ops[0]; player.z = ops[1]; }
   score = s.score; kills = s.kills; wave = s.wave; time = s.time;
-  secretsFound = s.secretsFound || 0;
+  secretsFound = s.secretsFound;
   var i;
   for (i = 0; i < secrets.length && i < (s.secretsFoundFlags || []).length; i++) secrets[i].found = !!s.secretsFoundFlags[i];
   for (i = 0; i < barrels.length && i < (s.deadBarrels || []).length; i++) barrels[i].dead = !!s.deadBarrels[i];
@@ -1578,7 +1670,9 @@ function continueRun() {
   toast("RUN RESTORED", 2);
 }
 function saveQuit() {
-  if (saveRun()) toast("RUN SAVED", 2);
+  // a failed save must never look like a saved run: stay in the run and say so
+  if (!saveRun()) { toast("COULD NOT SAVE - RUN KEPT", 2.6); paused = false; state = "play"; return; }
+  toast("RUN SAVED", 2);
   state = "title"; MSC = null; paused = false;
 }
 function quitToTitle() {

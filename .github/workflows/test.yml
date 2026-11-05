@@ -7,6 +7,10 @@
 # external request, the build runs and shrinks it, and the deployed demo
 # (docs/play/index.html) IS the built artifact — so the live page can never
 # silently serve a stale build.
+#
+# Runs tools/test-save.mjs: a saved run is data and is never trusted. A save with
+# no player, a NaN position or a string where a number belongs is refused and the
+# player is told, instead of throwing on CONTINUE every time they open the game.
 
 name: Test
 
@@ -36,3 +40,5 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Run tests
         run: node tools/test.mjs
+      - name: Run the save-hygiene tests
+        run: node tools/test-save.mjs

@@ -1,8 +1,8 @@
 {
   "name": "retro-strike",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
-  "description": "A complete retro third-person shooter in a single HTML file \u2014 custom software 3D renderer, chiptune audio, zero dependencies.",
+  "description": "A complete retro third-person shooter in a single HTML file — custom software 3D renderer, chiptune audio, zero dependencies.",
   "keywords": [
     "game",
     "canvas",
@@ -17,7 +17,8 @@
   "author": "Dr Sohil Momin",
   "scripts": {
     "build": "node tools/build.mjs",
-    "start": "python3 -m http.server 8080"
+    "start": "python3 -m http.server 8080",
+    "test": "node tools/test.mjs && node tools/test-save.mjs"
   },
   "devDependencies": {
     "terser": "^5.31.0"
