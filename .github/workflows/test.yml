@@ -11,6 +11,11 @@
 # Runs tools/test-save.mjs: a saved run is data and is never trusted. A save with
 # no player, a NaN position or a string where a number belongs is refused and the
 # player is told, instead of throwing on CONTINUE every time they open the game.
+#
+# Runs tools/test-store.mjs: the four stores that are NOT the run save — the
+# leaderboard, the campaign's unlock level, the daily best, the lifetime stats —
+# get the same gate. A board row that is null used to throw on every frame of the
+# LEADERBOARD, and campProg.unlocked = -3 locked every campaign level for good.
 
 name: Test
 
@@ -42,3 +47,5 @@ jobs:
         run: node tools/test.mjs
       - name: Run the save-hygiene tests
         run: node tools/test-save.mjs
+      - name: Run the stored-state tests
+        run: node tools/test-store.mjs

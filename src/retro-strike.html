@@ -730,12 +730,49 @@ var runStat = { buys: 0, nadeKills: 0, maxCombo: 0 };
 var board = [];
 var daily = { day: 0, best: 0 };
 var campProg = { unlocked: 1 };
-try { var ao = JSON.parse(localStorage.getItem("retroStrikeAch") || "{}"); for (var ak in ao) achUnlocked[ak] = true; } catch (e) {}
-try { var so = JSON.parse(localStorage.getItem("retroStrikeStats") || "null"); if (so && typeof so === "object" && typeof so.bestWave === "number") stats = so; } catch (e) {}
-try { var bo = JSON.parse(localStorage.getItem("retroStrikeBoard") || "[]"); board = Array.isArray(bo) ? bo : []; } catch (e) { board = []; }
-try { var dobj = JSON.parse(localStorage.getItem("retroStrikeDaily") || "null"); if (dobj) daily = dobj; } catch (e) {}
-try { var cobj = JSON.parse(localStorage.getItem("retroStrikeCamp") || "null"); if (cobj && cobj.unlocked) campProg = cobj; } catch (e) {}
-try { hi = parseInt(localStorage.getItem("retroStrikeHi") || "0", 10) || 0; } catch (e) {}
+// ---- the other four stores are JSON from disk, so they get a gate like the save ----
+// cleanSave() covers the RUN. These cover what else survives a crash: the board, the
+// campaign's unlock level, the daily best and the lifetime stats. Each was taken on
+// trust, and a hand-edited or half-written value bricked a panel: board [null] threw
+// on every frame of the LEADERBOARD, and campProg.unlocked = -3 left every level
+// locked for good with "LOCKED - CLEAR LEVEL -3" as the only hint on screen.
+function numOr(v, d) { return typeof v === "number" && isFinite(v) ? v : d; }
+function strOr(v, d) { return typeof v === "string" && v ? v.slice(0, 16) : d; }
+function cleanBoard(v) {
+  var out = [], i, e, s;
+  if (!Array.isArray(v)) return out;
+  for (i = 0; i < v.length && i < 200; i++) {
+    e = v[i];
+    if (!e || typeof e !== "object") continue;
+    s = numOr(e.s, NaN);
+    if (s !== s) continue; // a row with no readable score is not a row
+    out.push({ s: Math.max(0, Math.round(s)), w: Math.max(0, Math.round(numOr(e.w, 0))),
+               k: Math.max(0, Math.round(numOr(e.k, 0))), d: strOr(e.d, "NORMAL"),
+               sd: strOr(e.sd, "0"), t: Math.max(0, numOr(e.t, 0)) });
+  }
+  out.sort(function (a, b) { return b.s - a.s; });
+  return out.slice(0, 10);
+}
+function cleanCamp(v) {
+  var u = v && typeof v === "object" ? Math.round(numOr(v.unlocked, 1)) : 1;
+  return { unlocked: Math.max(1, Math.min(12, u)) };
+}
+function cleanDaily(v) {
+  if (!v || typeof v !== "object") return { day: 0, best: 0 };
+  return { day: Math.max(0, Math.round(numOr(v.day, 0))), best: Math.max(0, Math.round(numOr(v.best, 0))) };
+}
+function cleanStats(v) {
+  var d = { bestWave: 0, totalKills: 0, runs: 0, shots: 0, hits: 0, nadeKills: 0, bestCombo: 0, barrels: 0, waves: 0 }, k, out = {};
+  if (!v || typeof v !== "object") return d;
+  for (k in d) out[k] = Math.max(0, Math.round(numOr(v[k], 0)));
+  return out;
+}
+try { var ao = JSON.parse(localStorage.getItem("retroStrikeAch") || "{}"); for (var ak in ao) if (ao[ak] === true) achUnlocked[ak] = true; } catch (e) {}
+try { stats = cleanStats(JSON.parse(localStorage.getItem("retroStrikeStats") || "null")); } catch (e) {}
+try { board = cleanBoard(JSON.parse(localStorage.getItem("retroStrikeBoard") || "[]")); } catch (e) { board = []; }
+try { daily = cleanDaily(JSON.parse(localStorage.getItem("retroStrikeDaily") || "null")); } catch (e) {}
+try { campProg = cleanCamp(JSON.parse(localStorage.getItem("retroStrikeCamp") || "null")); } catch (e) {}
+try { hi = Math.max(0, Math.round(numOr(parseInt(localStorage.getItem("retroStrikeHi") || "0", 10) || 0, 0))); } catch (e) {}
 function saveStats() { try { localStorage.setItem("retroStrikeStats", JSON.stringify(stats)); } catch (e) {} }
 function achCount() { var n = 0, k; for (k in achUnlocked) n++; return n; }
 function unlock(id) {
@@ -1518,8 +1555,7 @@ function endRun() {
   } catch (e) {}
   if (mode === "endless" || mode === "cont") {
     board.push({ s: score, w: wave, k: kills, d: DIFFS[diff].name, sd: seedStr(), t: Date.now() });
-    board.sort(function (a, b) { return b.s - a.s; });
-    board = board.slice(0, 10);
+    board = cleanBoard(board);
     try { localStorage.setItem("retroStrikeBoard", JSON.stringify(board)); } catch (e) {}
     clearSave();
   } else if (mode === "daily") {

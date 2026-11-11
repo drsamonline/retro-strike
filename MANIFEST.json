@@ -15,10 +15,10 @@
       "at": "2026-11-10T13:43:39Z"
     },
     "docs/play/index.html": {
-      "sha": "e63c1f275d6edc3c01ca1e5b23cad66aef7f46f5",
-      "producer": "forge@2026-11-05",
+      "sha": "b3f3537325a9f6e30b12d0d437b4a228e02bc31d",
+      "producer": "forge@2026-11-12",
       "class": "generated",
-      "at": "2026-11-05T12:37:50Z"
+      "at": "2026-11-11T18:37:23Z"
     },
     ".github/workflows/build-apps.yml": {
       "sha": "4066c678a63b2d709bdc9a679d2d2d9e28e082c2",
@@ -27,5 +27,5 @@
       "at": "2026-11-10T15:13:00Z"
     }
   },
-  "updated": "2026-11-10T15:13:00Z"
+  "updated": "2026-11-11T18:37:23Z"
 }
