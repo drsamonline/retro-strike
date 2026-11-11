@@ -1,8 +1,8 @@
 {
   "name": "retro-strike",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "private": true,
-  "description": "A complete retro third-person shooter in a single HTML file — custom software 3D renderer, chiptune audio, zero dependencies.",
+  "description": "A complete retro third-person shooter in a single HTML file \u2014 custom software 3D renderer, chiptune audio, zero dependencies.",
   "keywords": [
     "game",
     "canvas",
@@ -18,9 +18,9 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "start": "python3 -m http.server 8080",
-    "test": "node tools/test.mjs && node tools/test-save.mjs"
+    "test": "node tools/test.mjs && node tools/test-save.mjs && node tools/test-store.mjs"
   },
   "devDependencies": {
-    "terser": "^5.31.0"
+    "terser": "^5.51.2"
   }
 }

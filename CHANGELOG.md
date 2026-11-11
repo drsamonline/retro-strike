@@ -3,6 +3,19 @@
 All notable changes to **RETRO STRIKE** are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.4.2] — 2026-11-12
+
+The run save got a gate in 1.4.1. The other four stores had none.
+
+### Fixed
+- 🐛 **A null leaderboard row killed the LEADERBOARD screen.** `board` was loaded as `Array.isArray(bo) ? bo : []` — array-or-nothing, every row taken on trust — and the row template `String(board[n].s)` then threw *"Cannot read properties of null (reading 's')"* **on every frame**, so opening LEADERBOARD from the title menu ended the session instead of showing a board. A row with a string score rendered as `000abc`, and a row missing `w`/`k`/`d` was advertised as a real run: `Wundefined Kundefined undefined`. `cleanBoard()` now drops a row it cannot read, gives a real row its defaults, clamps negatives, truncates runaway strings, sorts high-score-first and keeps the **top** ten — the save path had been slicing the first ten, which is only the same thing when the board arrived sorted.
+- 🐛 **`campProg.unlocked = -3` locked the campaign for good.** The loader was `if (cobj && cobj.unlocked) campProg = cobj`, and the gate is `n <= campProg.unlocked`, so a zero, a negative or a `null` left every level unplayable and the only feedback was **"LOCKED - CLEAR LEVEL -3"**. `cleanCamp()` pins it to a whole number in 1..12, so a bad value means "level 1", not "no campaign".
+- 🐛 **One bad field cost every lifetime stat.** The stats loader kept the object only if `bestWave` was a number and otherwise threw all of it away, so a single corrupt field reset `totalKills`, `runs` and the rest. `cleanStats()` now keeps every field it can read and zeroes only the field it cannot, and does not carry unknown keys into the game.
+- 🐛 **The daily best was shown as typed.** `daily` was `if (dobj) daily = dobj`, so the title menu advertised **"BEST abc"**. `cleanDaily()` requires two whole numbers.
+
+### Added
+- 🧪 `tools/test-store.mjs` — 65 assertions, in CI. It lifts the four cleaners out of the shipped source and runs them against hostile input, then re-runs the **shipped** LEADERBOARD row template and campaign gate on the cleaned result to show they no longer throw or lock. It also asserts the old path *did* throw on `board = [null]` and *did* lock every level at `unlocked = -3`, so both bugs stay in the record. Mutation-checked four ways (board gate removed → red, campaign clamp removed → red, first-ten cap restored → red, daily gate removed → red).
+
 ## [1.4.1] — 2026-11-05
 
 A saved run is data, and the game used to trust it.
