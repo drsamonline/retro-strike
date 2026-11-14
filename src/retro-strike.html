@@ -435,6 +435,11 @@ function placeSecrets(minD, maxD) {
   while (secrets.length < 4 && tries < 900) {
     tries++;
     var cell = reachList[Math.floor(rnd() * reachList.length)];
+    // a chest is picked up by standing on it (0.9 tiles), so it may never sit on a
+    // hazard tile: lava deals 8 hp per 0.5 s and a campaign "FIND N CHESTS" objective
+    // would then cost health to complete. placeProps() already refuses lava; this is
+    // the same rule for the one placement that was missing it.
+    if (lava[cell[1] * MS + cell[0]]) continue;
     var px = cell[0] + 0.5, pz = cell[1] + 0.5;
     var dc = Math.hypot(px - cx, pz - cz);
     if (dc < minD || dc > maxD) continue;

@@ -11,6 +11,10 @@
 # Runs tools/test-save.mjs: a saved run is data and is never trusted. A save with
 # no player, a NaN position or a string where a number belongs is refused and the
 # player is told, instead of throwing on CONTINUE every time they open the game.
+#
+# Runs tools/test-map.mjs: an arena is generated 132 ways (3 sizes x 40 seeds, plus
+# all 12 campaign levels) and every chest, barrel and prop must be on reachable,
+# non-wall, non-lava ground — a chest on lava could only be opened by burning hp.
 
 name: Test
 
@@ -42,3 +46,5 @@ jobs:
         run: node tools/test.mjs
       - name: Run the save-hygiene tests
         run: node tools/test-save.mjs
+      - name: Run the arena-placement tests
+        run: node tools/test-map.mjs

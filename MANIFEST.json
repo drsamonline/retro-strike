@@ -3,10 +3,10 @@
   "locked": false,
   "files": {
     "README.md": {
-      "sha": "c8154375818fe685c8aececac9f549f79bbe774b",
-      "producer": "audit-2026-11-10",
+      "sha": "0e7b3e0b1de090d94abccda4edc94d1057300a93",
+      "producer": "forge@2026-11-14",
       "class": "agent",
-      "at": "2026-11-10T13:43:39Z"
+      "at": "2026-11-14T18:39:18Z"
     },
     "docs/index.html": {
       "sha": "89089bb65472578407d51343dd1e3a6a3802b8c9",
@@ -15,17 +15,47 @@
       "at": "2026-11-10T13:43:39Z"
     },
     "docs/play/index.html": {
-      "sha": "e63c1f275d6edc3c01ca1e5b23cad66aef7f46f5",
-      "producer": "forge@2026-11-05",
+      "sha": "0855a10d072e71cad9e42f08e375c3701f298d6d",
+      "producer": "forge@2026-11-14",
       "class": "generated",
-      "at": "2026-11-05T12:37:50Z"
+      "at": "2026-11-14T18:39:14Z"
     },
     ".github/workflows/build-apps.yml": {
       "sha": "4066c678a63b2d709bdc9a679d2d2d9e28e082c2",
       "producer": "audit-2026-11-10",
       "class": "canonical",
       "at": "2026-11-10T15:13:00Z"
+    },
+    "src/retro-strike.html": {
+      "sha": "a5b62d9695146474c0a8c74464ab20429f6d0332",
+      "producer": "forge@2026-11-14",
+      "class": "canonical",
+      "at": "2026-11-14T18:39:13Z"
+    },
+    ".github/workflows/test.yml": {
+      "sha": "d8e0c3c04579b8a8fe1fe85870830e4e9070d930",
+      "producer": "forge@2026-11-14",
+      "class": "canonical",
+      "at": "2026-11-14T18:39:14Z"
+    },
+    "tools/test-map.mjs": {
+      "sha": "504eebe37dbcccfa3af528e6598f2dd3321466a9",
+      "producer": "forge@2026-11-14",
+      "class": "agent",
+      "at": "2026-11-14T18:39:15Z"
+    },
+    "CHANGELOG.md": {
+      "sha": "08da84378c214738043053f2a23df0a84f9f8444",
+      "producer": "forge@2026-11-14",
+      "class": "agent",
+      "at": "2026-11-14T18:39:15Z"
+    },
+    "package.json": {
+      "sha": "6a22a46d3ed5c088543db4563743a7518db1422a",
+      "producer": "forge@2026-11-14",
+      "class": "agent",
+      "at": "2026-11-14T18:39:15Z"
     }
   },
-  "updated": "2026-11-10T15:13:00Z"
+  "updated": "2026-11-14T18:39:18Z"
 }
