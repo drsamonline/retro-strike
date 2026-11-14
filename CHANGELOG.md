@@ -3,6 +3,17 @@
 All notable changes to **RETRO STRIKE** are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.4.2] — 2026-11-14
+
+A chest you could only open by standing in lava.
+
+### Fixed
+- 🐛 **Secret chests could spawn on a hazard tile.** A chest is collected by walking within 0.9 tiles of it, and lava deals 8 hp every 0.5 s to anything standing on it — so a chest on lava could only be opened by burning health. In campaign mode **FIND 2 CHESTS** / **FIND 3 CHESTS** is the objective, which made those levels cost health to complete. `placeProps()` has always refused lava cells for barrels and decor; `placeSecrets()` was the one placement that never asked. It asks now.
+- Measured, not assumed: over 3 arena sizes × 40 seeds and all 12 campaign levels, **22 of 720** procedural chests and **2 of 48** campaign chests (levels 5 and 11) were on lava. Both counts are now zero.
+
+### Added
+- 🧪 `tools/test-map.mjs` — 14 assertions, in CI. It lifts the real `genMap()` / `genCampaignMap()` / `placeSecrets()` / `placeProps()` / `floodFillCenter()` out of the shipped source and generates **132 arenas** (120 procedural + 12 campaign), then checks that no chest, barrel or prop is on lava, in a wall, out of the arena or off the reachable set; that the player's spawn cell is always open and reachable; that no campaign level silently falls back to a procedural arena; and that every arena still gets its 4 chests. It also strips the guard from the lifted function and re-runs it, so the old placement **does** put chests on lava (16 of 480) — the test is proven able to fail, not merely observed passing. `npm test` now runs it.
+
 ## [1.4.1] — 2026-11-05
 
 A saved run is data, and the game used to trust it.
