@@ -3,6 +3,20 @@
 All notable changes to **RETRO STRIKE** are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.4.2] — 2026-11-18
+
+The daily challenge was only half daily.
+
+### Fixed
+- 🐛 **The DAILY CHALLENGE was not the same game for two players.** Its arena was seeded from the day, but `spawnWave()` picked the wave mutators with `Math.random()` — so on the same day one player met **BLACKOUT** on wave 3 and another met **SWARM** on wave 3, while the daily best-score table compared the two as if they were the same run. The schedule now comes from `dailyMutIndex(day, wave, count)`, a pure function of the day and the wave: same day, same mutators, same waves, for everybody. Endless and campaign keep their random draw.
+- 🐛 **You could not see what the day held.** The title-screen row now reads `DAILY CHALLENGE  W3 SWARM` — the first mutator wave of the day — so a run can be planned instead of discovered.
+
+### Added
+- 🧪 `tools/test-daily.mjs` — 20 assertions, in CI. It lifts `dailyMutIndex()`/`dailyMutPlan()` out of the shipped source, runs them in a sandbox where `Math.random()` **throws**, and checks determinism, range, reachability of all five mutators, the 30% per-wave rate, and that the old random path really did disagree between players. It also asserts `spawnWave()` still branches on `mode === "daily"`, so the wiring cannot be quietly removed.
+
+### Notes
+- Still not deterministic: enemy types, elite rolls and wave objectives are drawn from `Math.random()`, so a daily run is *fair in its modifiers*, not yet identical run to run. That is the next honest step, not a claim this release makes.
+
 ## [1.4.1] — 2026-11-05
 
 A saved run is data, and the game used to trust it.

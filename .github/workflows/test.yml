@@ -42,3 +42,5 @@ jobs:
         run: node tools/test.mjs
       - name: Run the save-hygiene tests
         run: node tools/test-save.mjs
+      - name: Run the daily-determinism tests
+        run: node tools/test-daily.mjs

@@ -966,6 +966,27 @@ var MUTS = [
   { k: "BOUNTY", n: "BOUNTY HUNT" },
   { k: "DARK", n: "BLACKOUT" }
 ];
+// The DAILY CHALLENGE arena is seeded from the day, but its mutators used to be
+// drawn from Math.random() — so two players on the same day got different
+// modifiers, which is the one thing a shared daily run must never do.
+// dailyMutIndex() is pure: same day + wave => same answer for everybody.
+// -1 means "no mutator this wave".
+function dailyMutIndex(day, wave, count) {
+  if (!(wave >= 3) || !(count > 0)) return -1;
+  var h = (Math.imul(day | 0, 2654435761) + Math.imul(wave | 0, 40503)) | 0;
+  h ^= h << 13; h ^= h >>> 17; h ^= h << 5;
+  h = h >>> 0;
+  if (h % 100 >= 30) return -1;          // the same 30% per-wave rate endless uses
+  return (h >>> 8) % count;
+}
+function dailyMutPlan(day, upto) {
+  var out = [], w, i;
+  for (w = 1; w <= upto; w++) {
+    i = dailyMutIndex(day, w, MUTS.length);
+    if (i >= 0) out.push({ w: w, n: MUTS[i].n });
+  }
+  return out;
+}
 function spawnWave() {
   wave++;
   bannerT = 2.5;
@@ -975,7 +996,11 @@ function spawnWave() {
   if (wave >= 10) unlock("vet");
   if (mode === "train") return;
   waveMut = null;
-  if (wave >= 3 && Math.random() < 0.3) waveMut = MUTS[Math.floor(Math.random() * MUTS.length)];
+  if (mode === "daily") {
+    // fixed for the day: every player meets the same mutator on the same wave
+    var dmi = dailyMutIndex(Math.floor(Date.now() / 86400000), wave, MUTS.length);
+    if (dmi >= 0) waveMut = MUTS[dmi];
+  } else if (wave >= 3 && Math.random() < 0.3) waveMut = MUTS[Math.floor(Math.random() * MUTS.length)];
   waveObj = null;
   if (wave >= 2 && Math.random() < 0.35) waveObj = { kind: "rifle", n: 6, got: 0, pts: 400 };
   bonusType = Math.random() < 0.5 ? "speed" : "flawless";
@@ -1731,7 +1756,9 @@ function menuItems() {
     if (hasSave()) items.push({ t: "CONTINUE RUN", a: function () { continueRun(); } });
     items.push({ t: "ENDLESS ARENA", a: function () { startGame("endless"); } });
     items.push({ t: "CAMPAIGN", a: function () { campLvl = 1; openMenu("campaign"); } });
-    items.push({ t: "DAILY CHALLENGE" + (daily.day === Math.floor(Date.now() / 86400000) ? " (BEST " + daily.best + ")" : ""), a: function () { startGame("daily"); } });
+    var dayNow = Math.floor(Date.now() / 86400000), dPlan = dailyMutPlan(dayNow, 20);
+    var dLab = dPlan.length ? "  W" + dPlan[0].w + " " + dPlan[0].n : "  NO MUTATOR";
+    items.push({ t: "DAILY CHALLENGE" + (daily.day === dayNow ? " (BEST " + daily.best + ")" : "") + dLab, a: function () { startGame("daily"); } });
     items.push({ t: "TRAINING RANGE", a: function () { startGame("train"); } });
     items.push({ t: "CUSTOM SEED", a: function () { seedMode = true; seedBuf = ""; } });
     items.push({ t: "SETTINGS", a: function () { openMenu("settings"); } });

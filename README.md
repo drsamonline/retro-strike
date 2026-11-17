@@ -11,7 +11,7 @@
 **A complete retro-styled third-person shooter that lives inside a single HTML file — no engine, no build step, no dependencies.**
 
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm_Noncommercial_1.0.0-3DA639.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.1-ff8a00.svg?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4.2-ff8a00.svg?style=flat-square)](CHANGELOG.md)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-4ade80.svg?style=flat-square)](#-tech)
 [![Stars](https://img.shields.io/github/stars/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/stargazers)
 [![Forks](https://img.shields.io/github/forks/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/network/members)
@@ -80,7 +80,7 @@
 | 👁️ **Colour-vision palettes** | Red-green and blue-yellow safe enemy palettes |
 | 🖥️ **Variable arena size** | Standard / Large / Huge (48 / 64 / 80 tiles) |
 | ♿ **Adjustable HUD** | Three HUD scales, plus FOV, crosshair, sensitivity, aim assist and more |
-| 📅 **Daily Challenge** | A fresh date-seeded arena every day, with its own best-score tracking |
+| 📅 **Daily Challenge** | A fresh date-seeded arena every day — and the same mutators on the same waves for everyone, with its own best-score tracking |
 | 👻 **Ghost replay** | Race the spectre of your best run on the same seed |
 | 💣 **Throwables** | Grenades, proximity mines and cluster bombs, plus melee and a dash |
 | 🛒 **Between-wave shop** | 10 items: medkits, shields, ammo, throwables, weapon upgrades, drone companion |
@@ -292,7 +292,8 @@ See [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) for the measured before/after.
 
 **💡 Ideas (all client-side)**
 
-- [ ] Daily mutator combinations / a weekly challenge
+- [x] **v1.4.2** — the **daily mutator schedule**: the day's mutators are derived from the day, so every player meets the same modifier on the same wave
+- [ ] A weekly challenge (seven days, one scoreboard)
 - [ ] Weapon mastery perks
 - [ ] An endless "boss rush" mode
 - [ ] Replay export — share a run as a file

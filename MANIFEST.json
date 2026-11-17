@@ -3,10 +3,10 @@
   "locked": false,
   "files": {
     "README.md": {
-      "sha": "c8154375818fe685c8aececac9f549f79bbe774b",
-      "producer": "audit-2026-11-10",
+      "sha": "c45f089c137625ae15ef6ce959b542e3e390d976",
+      "producer": "retro-strike@1.4.2",
       "class": "agent",
-      "at": "2026-11-10T13:43:39Z"
+      "at": "2026-11-17T18:38:34Z"
     },
     "docs/index.html": {
       "sha": "89089bb65472578407d51343dd1e3a6a3802b8c9",
@@ -15,10 +15,10 @@
       "at": "2026-11-10T13:43:39Z"
     },
     "docs/play/index.html": {
-      "sha": "e63c1f275d6edc3c01ca1e5b23cad66aef7f46f5",
-      "producer": "forge@2026-11-05",
+      "sha": "24b487e7a8ba75efab96b0cd657ae52cc4b01f24",
+      "producer": "retro-strike@1.4.2",
       "class": "generated",
-      "at": "2026-11-05T12:37:50Z"
+      "at": "2026-11-17T18:38:34Z"
     },
     ".github/workflows/build-apps.yml": {
       "sha": "4066c678a63b2d709bdc9a679d2d2d9e28e082c2",
@@ -27,5 +27,5 @@
       "at": "2026-11-10T15:13:00Z"
     }
   },
-  "updated": "2026-11-10T15:13:00Z"
+  "updated": "2026-11-17T18:38:34Z"
 }
