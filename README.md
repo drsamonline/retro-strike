@@ -80,7 +80,7 @@
 | 👁️ **Colour-vision palettes** | Red-green and blue-yellow safe enemy palettes |
 | 🖥️ **Variable arena size** | Standard / Large / Huge (48 / 64 / 80 tiles) |
 | ♿ **Adjustable HUD** | Three HUD scales, plus FOV, crosshair, sensitivity, aim assist and more |
-| 📅 **Daily Challenge** | A fresh date-seeded arena every day — and the same mutators on the same waves for everyone, with its own best-score tracking |
+| 📅 **Daily Challenge** | A fresh date-seeded arena every day — and the same mutators, enemy types, elite rolls and wave objectives on the same waves for everyone, with its own best-score tracking |
 | 👻 **Ghost replay** | Race the spectre of your best run on the same seed |
 | 💣 **Throwables** | Grenades, proximity mines and cluster bombs, plus melee and a dash |
 | 🛒 **Between-wave shop** | 10 items: medkits, shields, ammo, throwables, weapon upgrades, drone companion |
@@ -293,6 +293,7 @@ See [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) for the measured before/after.
 **💡 Ideas (all client-side)**
 
 - [x] **v1.4.2** — the **daily mutator schedule**: the day's mutators are derived from the day, so every player meets the same modifier on the same wave
+- [x] **v1.4.3** — the **whole daily wave is seeded**: enemy types, elite rolls, the wave objective and the speed/flawless bonus come from the day too, so two players on one day fight the same waves
 - [ ] A weekly challenge (seven days, one scoreboard)
 - [ ] Weapon mastery perks
 - [ ] An endless "boss rush" mode
