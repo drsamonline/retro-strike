@@ -987,6 +987,30 @@ function dailyMutPlan(day, upto) {
   }
   return out;
 }
+// The mutators were only half of it: enemy types, elite rolls and the wave
+// objective were still drawn from Math.random(), so two players on one day met
+// the same modifiers on different waves of different enemies. dailyRand() is the
+// seeded stream they all draw from instead — pure, no Math.random, and the same
+// day + wave + slot answers the same number for every player.
+function dailyRand(day, wave, salt) {
+  var h = (Math.imul(day | 0, 2654435761) + Math.imul(wave | 0, 40503) + Math.imul(salt | 0, 2246822519)) | 0;
+  h ^= h << 13; h ^= h >>> 17; h ^= h << 5;
+  h = (h + Math.imul(salt | 0, 3266489917)) | 0;
+  h ^= h >>> 15; h = Math.imul(h, 2246822519); h ^= h >>> 13;
+  return (h >>> 0) / 4294967296;
+}
+// enemyTypeFor() is the ONE place the spawn thresholds live, so the daily and the
+// endless path cannot drift apart: both hand it a roll in [0,1).
+function enemyTypeFor(r, wave) {
+  if (wave >= 5 && r < 0.07) return "sniper";
+  if (wave >= 5 && r < 0.13) return "healer";
+  if (wave >= 3 && r < 0.22) return "splitter";
+  if (wave >= 3 && r < 0.32) return "kami";
+  if (wave >= 3 && r < 0.40) return "shield";
+  if (wave >= 2 && r < 0.58) return "tank";
+  if (wave >= 2 && r < 0.74) return "runner";
+  return "grunt";
+}
 function spawnWave() {
   wave++;
   bannerT = 2.5;
@@ -995,15 +1019,20 @@ function spawnWave() {
   if (wave >= 5) unlock("wave5");
   if (wave >= 10) unlock("vet");
   if (mode === "train") return;
+  // dseed is the day the run belongs to; 0 in endless/campaign, where the
+  // draws stay random because there is no shared run to be fair to.
+  var dseed = mode === "daily" ? Math.floor(Date.now() / 86400000) : 0;
   waveMut = null;
   if (mode === "daily") {
     // fixed for the day: every player meets the same mutator on the same wave
-    var dmi = dailyMutIndex(Math.floor(Date.now() / 86400000), wave, MUTS.length);
+    var dmi = dailyMutIndex(dseed, wave, MUTS.length);
     if (dmi >= 0) waveMut = MUTS[dmi];
   } else if (wave >= 3 && Math.random() < 0.3) waveMut = MUTS[Math.floor(Math.random() * MUTS.length)];
   waveObj = null;
-  if (wave >= 2 && Math.random() < 0.35) waveObj = { kind: "rifle", n: 6, got: 0, pts: 400 };
-  bonusType = Math.random() < 0.5 ? "speed" : "flawless";
+  var objRoll = mode === "daily" ? dailyRand(dseed, wave, 7) : Math.random();
+  if (wave >= 2 && objRoll < 0.35) waveObj = { kind: "rifle", n: 6, got: 0, pts: 400 };
+  var bonusRoll = mode === "daily" ? dailyRand(dseed, wave, 8) : Math.random();
+  bonusType = bonusRoll < 0.5 ? "speed" : "flawless";
   bonusTarget = 18 + wave * 3;
   beep(440, 0.25, "square", 0.06, 880);
   if (waveMut) { toast("MUTATOR: " + waveMut.n, 2.2); beep(180, 0.4, "sawtooth", 0.06, 90); }
@@ -1028,15 +1057,8 @@ function spawnWave() {
   var spMul = (waveMut && waveMut.k === "SPEEDY" ? 1.3 : 1) * D.spd;
   for (i = 0; i < n; i++) {
     sp = findSpot(10, 24);
-    var r = Math.random();
-    if (wave >= 5 && r < 0.07) type = "sniper";
-    else if (wave >= 5 && r < 0.13) type = "healer";
-    else if (wave >= 3 && r < 0.22) type = "splitter";
-    else if (wave >= 3 && r < 0.32) type = "kami";
-    else if (wave >= 3 && r < 0.40) type = "shield";
-    else if (wave >= 2 && r < 0.58) type = "tank";
-    else if (wave >= 2 && r < 0.74) type = "runner";
-    else type = "grunt";
+    var r = mode === "daily" ? dailyRand(dseed, wave, 100 + i) : Math.random();
+    type = enemyTypeFor(r, wave);
     var hp = Math.round((type === "tank" ? 80 + wave * 12 : (type === "runner" ? 14 + wave * 3 : (type === "splitter" ? 40 + wave * 8 : (type === "kami" ? 10 + wave * 2 : (type === "shield" ? 50 + wave * 10 : (type === "sniper" ? 30 + wave * 5 : (type === "healer" ? 22 + wave * 4 : 26 + wave * 6))))))) * hpMul);
     var spd = (type === "tank" ? 0.95 : (type === "runner" ? 2.4 + Math.min(0.8, wave * 0.1) : (type === "splitter" ? 1.1 : (type === "kami" ? 2.7 : (type === "shield" ? 0.9 : (type === "sniper" ? 0.85 : (type === "healer" ? 2.0 : 1.5 + Math.min(1.1, wave * 0.12)))))))) * spMul;
     var e = {
@@ -1046,7 +1068,8 @@ function spawnWave() {
       cd: 1 + Math.random() * 2, hitT: 0, spawnT: 0.5, wob: Math.random() * 6.28,
       elite: false, gold: false, shield: type === "shield" ? Math.round(60 * D.hp) : 0, charge: 0
     };
-    if (wave >= 4 && Math.random() < 0.12) { e.elite = true; e.hp = Math.round(e.hp * 2.2); e.maxhp = e.hp; e.speed *= 1.15; }
+    var eliteRoll = mode === "daily" ? dailyRand(dseed, wave, 600 + i) : Math.random();
+    if (wave >= 4 && eliteRoll < 0.12) { e.elite = true; e.hp = Math.round(e.hp * 2.2); e.maxhp = e.hp; e.speed *= 1.15; }
     if (waveMut && waveMut.k === "BOUNTY" && !enemies.length) { e.gold = true; e.elite = true; e.hp = Math.round(e.hp * 2); e.maxhp = e.hp; }
     enemies.push(e);
   }

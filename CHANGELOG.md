@@ -3,6 +3,20 @@
 All notable changes to **RETRO STRIKE** are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.4.3] — 2026-11-20
+
+The daily challenge is now the same RUN, not just the same rules.
+
+### Fixed
+- 🐛 **Two players on one day fought different waves.** v1.4.2 seeded the mutators and stopped there: `spawnWave()` still drew the enemy mix with `Math.random()`, so on the same day one player met four snipers on wave 6 and another met four grunts, and the elite roll, the wave objective and the speed/flawless bonus were random too. Those four draws now come from `dailyRand(day, wave, slot)` — a pure hash of the day, the wave and the draw's slot — so the same day produces the same waves for everybody. Endless and campaign keep their random draw.
+- 🐛 **The spawn thresholds had two homes waiting to disagree.** The `r < 0.07 … sniper` ladder lived inline in `spawnWave()`; it is now `enemyTypeFor(roll, wave)`, the one place the bands are defined, called by both paths.
+
+### Added
+- 🧪 `tools/test-daily.mjs` grew from 20 to **44 assertions**: the seeded stream is checked for range, determinism, independent slots and a uniform spread over ten buckets; two players' full 20-wave composition is compared for equality (and against the old random path, which disagreed 200/200); the type bands are asserted at their boundaries; and the wiring is pinned so a daily draw cannot quietly go back to `Math.random()`.
+
+### Notes
+- Still not identical run to run: enemy *spawn positions* depend on where the player is standing and on `findSpot()`'s random walk, which is a property of the arena rather than of the day. The waves — what spawns, where it comes from in the table, which are elite, what the objective and bonus are — are now the day's.
+
 ## [1.4.2] — 2026-11-18
 
 The daily challenge was only half daily.
