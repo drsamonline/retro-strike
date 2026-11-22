@@ -280,5 +280,171 @@ if (spawn) {
     !/r < 0\.07/.test(spawn));
 }
 
+// ---- 12. one day, one arena: the same spawns ------------------------------
+// The waves were the day's but the spawn POSITIONS were not: findSpot() walks
+// rnd() (the shared world-gen stream) and accepts the first cell inside the
+// distance band of the LIVE player, so the cell a wave lands on depended on
+// where the player stood, and every call left the shared stream somewhere else.
+// Two players on one day therefore met the same waves from different sides.
+// dailySpot() takes the candidate order from the day and keeps the distance
+// rule as a filter. Math.random is poisoned in this context and `rnd` below
+// throws, so a placement that reached for either fails loudly.
+const spotText = liftFn(SRC, 'function dailySpot(');
+const spotForText = liftFn(SRC, 'function spotFor(');
+ok('dailySpot() is in the shipped source', !!spotText);
+ok('spotFor() is in the shipped source', !!spotForText);
+if (!spotText) { console.log('\n' + pass + ' passed, ' + (fail + 1) + ' failed'); process.exit(1); }
+vm.runInContext('function rnd() { throw new Error("dailySpot() must not walk the world-gen stream"); }', ctx);
+vm.runInContext(spotText, ctx);
+const dailySpot = vm.runInContext('dailySpot', ctx);
+
+// a reachable-cell list, shaped like reachList: a 24x24 open grid
+const CELLS = [];
+for (let z = 0; z < 24; z++) for (let x = 0; x < 24; x++) CELLS.push([x, z]);
+const START = 12;   // every run starts at the arena centre
+
+let spotThrew = false;
+try { dailySpot(DAY, 3, 200, 10, 24, START, START, CELLS); } catch (e) { spotThrew = true; }
+ok('dailySpot() reads neither Math.random() nor rnd()', !spotThrew);
+
+let spotStable = true;
+for (let w = 1; w <= 20; w++) {
+  const a = dailySpot(DAY, w, 200, 10, 24, START, START, CELLS);
+  const b = dailySpot(DAY, w, 200, 10, 24, START, START, CELLS);
+  if (JSON.stringify(a) !== JSON.stringify(b)) spotStable = false;
+}
+ok('same day + wave + slot always lands on the same cell', spotStable);
+
+// the band is still the rule: a cell is never closer than minD or further than maxD
+let inBand = true, outOfBand = 0, empty = 0;
+for (let d = DAY - 100; d <= DAY + 100; d++)
+  for (let w = 1; w <= 20; w++)
+    for (const px of [START, 4, 19]) {
+      const p = dailySpot(d, w, 200, 10, 24, px, px, CELLS);
+      if (!p) { empty++; continue; }
+      const dist = Math.hypot(p[0] - px, p[1] - px);
+      if (dist < 10 || dist > 24) { inBand = false; outOfBand++; }
+    }
+ok('every placement sits inside the [10,24] band', inBand, outOfBand + ' outside');
+ok('a dense arena never falls back to null', empty === 0, empty + ' empty');
+
+// the golden-ratio walk spreads over the list instead of clustering on one cell
+const cellsUsed = new Set();
+for (let w = 1; w <= 20; w++)
+  for (let i = 0; i < 20; i++) {
+    const p = dailySpot(DAY, w, 200 + i, 10, 24, START, START, CELLS);
+    if (p) cellsUsed.add(p[0] + ',' + p[1]);
+  }
+ok('a day\'s spawns use many cells, not one', cellsUsed.size >= 20, cellsUsed.size + ' cells');
+ok('two different days place the same wave differently',
+  JSON.stringify(dailySpot(DAY, 6, 200, 10, 24, START, START, CELLS)) !==
+  JSON.stringify(dailySpot(DAY + 1, 6, 200, 10, 24, START, START, CELLS)));
+
+// two players standing in the same place on the same day get the same spawns
+function spawns(day, px, pz) {
+  const out = [];
+  for (let w = 1; w <= 20; w++) {
+    out.push(dailySpot(day, w, 5, 9, 14, px, pz, CELLS));
+    for (let i = 0; i < 20; i++) out.push(dailySpot(day, w, 200 + i, 10, 24, px, pz, CELLS));
+  }
+  return JSON.stringify(out);
+}
+ok('two players on one day get the same spawns', spawns(DAY, START, START) === spawns(DAY, START, START));
+ok('a different day places them differently', spawns(DAY, START, START) !== spawns(DAY + 1, START, START));
+
+// the OLD path: findSpot() as it shipped — rnd() walk + the live player's distance
+function xorshift(s) { return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; }; }
+function oldSpot(rand, minD, maxD, px, pz) {
+  for (let t = 0; t < 120; t++) {
+    const cell = CELLS[Math.floor(rand() * CELLS.length)];
+    const x = cell[0] + 0.5, z = cell[1] + 0.5;
+    const d = Math.hypot(x - px, z - pz);
+    if (d >= minD && d <= maxD) return [x, z];
+  }
+  return [px + 2, pz + 2];
+}
+// two players, one day, one arena: the same world-gen stream, but each stands
+// somewhere different, and each accepted cell advances the stream by a different
+// number of draws — so wave 2 already starts from a different place.
+const p1 = xorshift(0x9e3779b9), p2 = xorshift(0x9e3779b9);
+let oldDisagreed = 0, oldTotal = 0;
+for (let w = 1; w <= 10; w++) {
+  for (let i = 0; i < 8; i++) {
+    const a = oldSpot(p1, 10, 24, START, START);
+    const b = oldSpot(p2, 10, 24, 6, 17);   // the second player is elsewhere on the map
+    oldTotal++;
+    if (JSON.stringify(a) !== JSON.stringify(b)) oldDisagreed++;
+  }
+}
+ok('the old path did place the same wave differently for two players',
+  oldDisagreed > oldTotal * 0.6, oldDisagreed + '/' + oldTotal);
+
+// ---- 13. the shipped spawnWave() uses it ---------------------------------
+if (spawn) {
+  ok('the daily boss spot comes from the day', /sp = spotFor\(dseed, wave, 5, 9, 14\)/.test(spawn));
+  ok('the daily enemy spot comes from the day', /sp = spotFor\(dseed, wave, 200 \+ i, 10, 24\)/.test(spawn));
+  ok('no daily spawn still walks findSpot() directly', !/sp = findSpot\(/.test(spawn));
+  ok('the daily enemy cooldown comes from dailyRand()', /cd: mode === "daily" \? 1 \+ dailyRand\(dseed, wave, 900 \+ i\)/.test(spawn));
+  ok('the daily enemy wobble comes from dailyRand()', /wob: mode === "daily" \? dailyRand\(dseed, wave, 950 \+ i\)/.test(spawn));
+}
+if (spotForText) {
+  ok('spotFor() routes the daily run through dailySpot()', /mode === "daily"[\s\S]*?dailySpot\(dseed, wave, slot, minD, maxD, player\.x, player\.z, reachList\)/.test(spotForText));
+  ok('spotFor() keeps findSpot() for the other modes', /return findSpot\(minD, maxD\)/.test(spotForText));
+  // and it does it for real: in a daily run findSpot() is never reached
+  const ctx2 = vm.createContext({
+    mode: 'daily', player: { x: START, z: START }, reachList: CELLS, dailySpot: dailySpot,
+    findSpot: function () { throw new Error('a daily wave must not walk findSpot()'); }
+  });
+  vm.runInContext(spotForText, ctx2);
+  const spotFor = vm.runInContext('spotFor', ctx2);
+  let dailyThrew = false, dailySpot_;
+  try { dailySpot_ = spotFor(DAY, 7, 200, 10, 24); } catch (e) { dailyThrew = true; }
+  ok('a daily wave is placed without findSpot()', !dailyThrew &&
+    JSON.stringify(dailySpot_) === JSON.stringify(dailySpot(DAY, 7, 200, 10, 24, START, START, CELLS)));
+  ctx2.mode = 'endless';
+  let endlessUsedFind = false;
+  try { spotFor(0, 7, 200, 10, 24); } catch (e) { endlessUsedFind = true; }
+  ok('an endless wave still walks findSpot()', endlessUsedFind);
+}
+
+// ---- 14. the ghost replay: it must belong to the run it is replayed in -----
+// The record carried the arena seed alone, so a daily best could be replayed
+// into a fight whose draws had changed. It now names its mode and its day.
+const gmText = liftFn(SRC, 'function ghostMatches(');
+const lgText = liftFn(SRC, 'function loadGhost(');
+const sgText = liftFn(SRC, 'function saveGhost(');
+ok('ghostMatches() is in the shipped source', !!gmText);
+ok('loadGhost() is in the shipped source', !!lgText);
+ok('saveGhost() is in the shipped source', !!sgText);
+if (gmText) {
+  vm.runInContext(gmText, ctx);
+  const ghostMatches = vm.runInContext('ghostMatches', ctx);
+  const rec = [{ t: 0, x: 1, z: 1, yaw: 0 }, { t: 0.4, x: 2, z: 2, yaw: 0 }];
+  const dailyGh = { seed: 1234, score: 900, mode: 'daily', day: DAY, rec };
+  const endlessGh = { seed: 1234, score: 900, mode: 'endless', day: DAY, rec };
+  const oldGh = { seed: 1234, score: 900, rec };   // a record from before this build
+
+  ok('a daily best replays in the same day\'s daily run', ghostMatches(dailyGh, 1234, 'daily', DAY) === true);
+  ok('a daily best from another day does not replay', ghostMatches(dailyGh, 1234, 'daily', DAY + 1) === false);
+  ok('a daily best does not replay into an endless run', ghostMatches(dailyGh, 1234, 'endless', DAY) === false);
+  ok('an endless best does not replay into a daily run', ghostMatches(endlessGh, 1234, 'daily', DAY) === false);
+  ok('an endless best replays on its own arena', ghostMatches(endlessGh, 1234, 'endless', DAY + 9) === true);
+  ok('a ghost from another arena does not replay', ghostMatches(endlessGh, 999, 'endless', DAY) === false);
+  ok('a continue run counts as the endless run it continues',
+    ghostMatches({ ...endlessGh, mode: 'cont' }, 1234, 'endless', DAY) === true &&
+    ghostMatches(endlessGh, 1234, 'cont', DAY) === true);
+  ok('a record with no mode still replays into endless (back-compat)', ghostMatches(oldGh, 1234, 'endless', DAY) === true);
+  ok('a record with no mode never replays into a daily run', ghostMatches(oldGh, 1234, 'daily', DAY) === false);
+  ok('a one-sample or missing path is never a ghost',
+    ghostMatches({ ...endlessGh, rec: [{ t: 0, x: 1, z: 1, yaw: 0 }] }, 1234, 'endless', DAY) === false &&
+    ghostMatches({ ...endlessGh, rec: null }, 1234, 'endless', DAY) === false &&
+    ghostMatches(null, 1234, 'endless', DAY) === false);
+}
+if (lgText && sgText) {
+  ok('loadGhost() decides with ghostMatches()', /ghostMatches\(gh, arenaSeed, mode, Math\.floor\(Date\.now\(\) \/ 86400000\)\)/.test(lgText));
+  ok('saveGhost() records its mode', /mode: mode === "cont" \? "endless" : mode/.test(sgText));
+  ok('saveGhost() records its day', /day: Math\.floor\(Date\.now\(\) \/ 86400000\)/.test(sgText));
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

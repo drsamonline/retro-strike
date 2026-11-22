@@ -32,7 +32,10 @@ backing canvas through a simple pinhole camera and filling polygons.
 
 - **PRNG** — a seeded **xorshift** (`srand`/`rnd`) makes arenas reproducible
   from a 32-bit seed, which is what powers Daily Challenge, shareable seeds and
-  the ghost replay.
+  the ghost replay. A Daily run draws nothing from it that another player cannot
+  reproduce: its mutators, waves, spawns and ghost checks come from
+  `dailyMutIndex` / `dailyRand` / `dailySpot` / `ghostMatches`, which are pure
+  functions of the day.
 - **Procedural arena** (`genMap`) — random blocks with a 1-cell margin (so
   corridors never seal), open plazas, a lava hazard pass, then a flood fill
   (`floodFillCenter`) to compute the reachable set used for all placement.

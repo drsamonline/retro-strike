@@ -3,6 +3,20 @@
 All notable changes to **RETRO STRIKE** are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.4.4] — 2026-11-22
+
+The daily challenge is now the same ARENA, not just the same waves.
+
+### Fixed
+- 🐛 **Two players on one day met the same waves from different sides.** v1.4.3 made the waves the day's and stopped there: `spawnWave()` still placed every enemy with `findSpot()`, which walks `rnd()` — the shared world-gen stream — and accepts the first cell inside the distance band **of the live player**. So the cell a wave landed on depended on where that player happened to be standing, and every accepted cell left the shared stream somewhere else for the next one. The waves were identical and the fight was not, which is exactly what a daily leaderboard compares. `dailySpot(day, wave, slot, …)` takes the candidate *order* from the day (a seeded start, then a golden-ratio stride over the reachable cells) and keeps `findSpot()`'s distance rule as the filter, so the order is everybody's and only the filter is personal — nobody gets a spawn on top of them. The boss spot and every enemy spot go through it via `spotFor()`, and the enemy's first-fire cooldown and wobble phase come from `dailyRand()` too, so a daily wave is the day's down to the spawn.
+- 🐛 **A ghost replay could replay a run it did not belong to.** The record carried the arena seed alone, so a best run from any mode on that arena could be replayed into any other — including a daily best recorded before the daily waves became the day's, whose path runs through draws that no longer exist. The record now names its mode and its day, and `ghostMatches()` decides whether it may be replayed: same arena, same mode, and for a daily run the same day. A record from before this build has no mode, so it is treated as endless — the only mode whose random seed it could have matched — and an old daily best is retired rather than replayed into a fight it was not recorded in.
+
+### Added
+- 🧪 `tools/test-daily.mjs` grew from 44 to **80 assertions**: `dailySpot()` is proved pure (both `Math.random` and `rnd` throw inside it), deterministic, inside the band on 4,200 placements, spread over 177 distinct cells in a day, and identical for two players standing in the same place — against the old path, which placed 78 of 80 spawns differently for two players standing apart. `ghostMatches()` is proved to refuse a ghost from another mode, another day, another arena, and a pre-1.4.4 record in a daily run, while still accepting one in endless. `spotFor()` is proved to place a daily wave without ever calling `findSpot()`, and the wiring is pinned so a daily spawn cannot quietly go back to the world-gen stream. Five mutations of the new code each turn the suite red.
+
+### Notes
+- The distance rule still reads the live player, by design: it is what stops an enemy spawning on top of you. Two players standing in the same place therefore get byte-identical spawns; a player who has moved gets the day's next candidate that respects the rule, which is the same rule everyone is held to.
+
 ## [1.4.3] — 2026-11-20
 
 The daily challenge is now the same RUN, not just the same rules.
