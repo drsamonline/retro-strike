@@ -693,17 +693,38 @@ var mode = "endless"; // endless | daily | train | camp | cont
 var paused = false, nadeHold = null;
 var shopT = 0, shopOpen = false; // intermission shop overlay: auto-show timer + manual toggle
 var GHOST = null, ghostRec = [], ghostT = 0, ghostI = 0;
+// A ghost is only honest if it is replayed into the run it was recorded in.
+// The record used to carry the arena seed alone, so any best run on that arena
+// could be replayed into any mode on it — and a daily best recorded before the
+// daily waves became the day's (2026-11-20) carries a path through draws that
+// no longer exist. The record now names its mode and its day, and this decides
+// whether it may be replayed at all. A record from before this build has no
+// mode: it is treated as endless, which is the only mode whose random arena
+// seed it could have matched, so an old daily best is retired rather than
+// replayed into a fight it was not recorded in.
+function ghostMatches(gh, seed, mode, day) {
+  if (!gh || !gh.rec || !(gh.rec.length > 1)) return false;
+  if (gh.seed !== seed) return false;
+  var m = (gh.mode === "cont" ? "endless" : gh.mode) || "endless";
+  var now = mode === "cont" ? "endless" : mode;
+  if (m !== now) return false;
+  if (m === "daily") return gh.day === day;
+  return true;
+}
 function loadGhost() {
   GHOST = null;
   try {
     var gh = JSON.parse(localStorage.getItem("retroStrikeGhost") || "null");
-    if (gh && gh.seed === arenaSeed && gh.rec && gh.rec.length > 1) GHOST = gh;
+    if (ghostMatches(gh, arenaSeed, mode, Math.floor(Date.now() / 86400000))) GHOST = gh;
   } catch (e) { GHOST = null; }
 }
 function saveGhost() {
   try {
     var old = JSON.parse(localStorage.getItem("retroStrikeGhost") || "null");
-    if ((!old || score > old.score) && ghostRec.length > 1) localStorage.setItem("retroStrikeGhost", JSON.stringify({ seed: arenaSeed, score: score, rec: ghostRec }));
+    if ((!old || score > old.score) && ghostRec.length > 1) localStorage.setItem("retroStrikeGhost", JSON.stringify({
+      seed: arenaSeed, score: score, mode: mode === "cont" ? "endless" : mode,
+      day: Math.floor(Date.now() / 86400000), rec: ghostRec
+    }));
   } catch (e) {}
 }
 function ghostPos() {
@@ -959,6 +980,40 @@ function findSpot(minD, maxD) {
   }
   return [player.x + 2, player.z + 2];
 }
+// The daily run's spawn placement. findSpot() above walks rnd() — the shared
+// world-gen stream — and accepts the first cell inside [minD,maxD] of the LIVE
+// player, so the cell a wave lands on depends on where the player happens to
+// stand, and each call leaves the shared stream in a different place for the
+// next player. Two players on one day therefore met the same waves with the
+// enemies coming from different sides, which is what a daily leaderboard is
+// comparing. dailySpot() takes the candidate ORDER from the day instead:
+// a seeded start plus a golden-ratio stride spreads the walk over the whole
+// reachable list, and findSpot()'s distance rule stays as the filter, so the
+// order is everybody's and only the filter is personal (nobody gets a spawn on
+// top of them). Pure: no Math.random, no rnd().
+function dailySpot(day, wave, slot, minD, maxD, px, pz, cells) {
+  var n = cells ? cells.length : 0, k, f, idx, x, z, d;
+  if (!n) return null;
+  var base = dailyRand(day, wave, slot);
+  for (k = 0; k < n; k++) {
+    f = (base + k * 0.6180339887498949) % 1;
+    idx = Math.floor(f * n);
+    if (idx >= n) idx = n - 1;
+    x = cells[idx][0] + 0.5; z = cells[idx][1] + 0.5;
+    d = Math.hypot(x - px, z - pz);
+    if (d >= minD && d <= maxD) return [x, z];
+  }
+  return null;
+}
+// One call site for both of a wave's spawns, so a daily wave cannot put the
+// boss through the day's stream and the enemies through rnd().
+function spotFor(dseed, wave, slot, minD, maxD) {
+  if (mode === "daily") {
+    var p = dailySpot(dseed, wave, slot, minD, maxD, player.x, player.z, reachList);
+    if (p) return p;
+  }
+  return findSpot(minD, maxD);
+}
 var MUTS = [
   { k: "FOG", n: "PEA-Soup FOG" },
   { k: "SWARM", n: "SWARM" },
@@ -1041,7 +1096,7 @@ function spawnWave() {
   if (waveMut && waveMut.k === "SWARM") n = Math.min(34, Math.floor(n * 1.8));
   if (mode === "camp" && campObj && campObj.kind === "boss") n = 5;
   if (wave % 5 === 0 || (mode === "camp" && campObj && campObj.kind === "boss")) {
-    sp = findSpot(9, 14);
+    sp = spotFor(dseed, wave, 5, 9, 14);
     var bhp = Math.round((380 + wave * 22) * D.hp);
     // every other boss wave brings the Summoner instead of the classic boss
     var bossType = (mode === "camp" || ((wave / 5) % 2 === 1)) ? "boss" : "summoner";
@@ -1056,7 +1111,7 @@ function spawnWave() {
   var hpMul = (waveMut && waveMut.k === "SWARM" ? 0.6 : 1) * D.hp;
   var spMul = (waveMut && waveMut.k === "SPEEDY" ? 1.3 : 1) * D.spd;
   for (i = 0; i < n; i++) {
-    sp = findSpot(10, 24);
+    sp = spotFor(dseed, wave, 200 + i, 10, 24);
     var r = mode === "daily" ? dailyRand(dseed, wave, 100 + i) : Math.random();
     type = enemyTypeFor(r, wave);
     var hp = Math.round((type === "tank" ? 80 + wave * 12 : (type === "runner" ? 14 + wave * 3 : (type === "splitter" ? 40 + wave * 8 : (type === "kami" ? 10 + wave * 2 : (type === "shield" ? 50 + wave * 10 : (type === "sniper" ? 30 + wave * 5 : (type === "healer" ? 22 + wave * 4 : 26 + wave * 6))))))) * hpMul);
@@ -1065,7 +1120,9 @@ function spawnWave() {
       x: sp[0], z: sp[1], type: type,
       hp: hp, maxhp: hp, speed: spd,
       r: type === "tank" ? 0.55 : (type === "runner" ? 0.34 : (type === "kami" ? 0.32 : (type === "shield" ? 0.5 : (type === "splitter" ? 0.45 : (type === "sniper" ? 0.4 : (type === "healer" ? 0.38 : 0.42)))))),
-      cd: 1 + Math.random() * 2, hitT: 0, spawnT: 0.5, wob: Math.random() * 6.28,
+      cd: mode === "daily" ? 1 + dailyRand(dseed, wave, 900 + i) * 2 : 1 + Math.random() * 2,
+      hitT: 0, spawnT: 0.5,
+      wob: mode === "daily" ? dailyRand(dseed, wave, 950 + i) * 6.28 : Math.random() * 6.28,
       elite: false, gold: false, shield: type === "shield" ? Math.round(60 * D.hp) : 0, charge: 0
     };
     var eliteRoll = mode === "daily" ? dailyRand(dseed, wave, 600 + i) : Math.random();
