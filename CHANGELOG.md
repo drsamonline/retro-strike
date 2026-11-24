@@ -3,6 +3,20 @@
 All notable changes to **RETRO STRIKE** are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.4.5] — 2026-11-25
+
+The ghost replay now shows the fight it was recorded in.
+
+### Fixed
+- 🐛 **The specter walked an empty arena.** The ghost recorded the player's path and nothing else, so a "replay of your best run" showed you dodging, strafing and shooting at enemies that were not there — the arena was empty and the replay was a stroll. The record now carries the wave's spawns too: one entry per enemy the run met (`ghostWaves`), written by `recordGhostSpawn()` at the boss and at every grunt `spawnWave()` pushes, and replayed by `ghostEnemiesAt()` as faint markers wherever that enemy stood.
+- 🐛 **The two streams could have drifted apart.** The path is sampled on a fixed 0.4s clock (`ghostRec.length * 0.4`); the spawns are stamped with `ghostTick()`, which quantises to that same `GHOST_DT` — so a spawn and the player position it was met at always land on the same tick, and the two streams cannot slowly slide out of step. A record from before this build has no `spawns` and answers `[]`, so an old best run still replays its path rather than throwing.
+
+### Added
+- 🧪 `tools/test-ghost.mjs` — **42 assertions** over the three shipped functions, lifted out of the source. The clock is pinned to the path's own `0.4` (read out of the path recorder, not restated); `ghostTick()` is proved monotonic, always a whole multiple of `GHOST_DT`, and to return `0` rather than `NaN`, `Infinity` or a negative for junk input; `recordGhostSpawn()` refuses a non-finite time or coordinate, defaults a missing type to `grunt`, and stops at `GHOST_CAP` (900, measured); `ghostEnemiesAt()` is proved on its window boundaries (absent one tick early, present on the tick, absent at exactly `t + GHOST_LIFE`, several live at once, a life override honoured); and the wiring is pinned — boss and grunts recorded, saved with the record, reset at both run-start sites, drawn in the ghost block. **Ten mutations of the shipped code are each proved RED.**
+
+### Notes
+- The markers are drawn at 22% alpha and are `aria`-free scenery, not entities: they cannot be shot, do not collide, and do not affect the run's score. The ghost remains a replay, not a second player.
+
 ## [1.4.4] — 2026-11-22
 
 The daily challenge is now the same ARENA, not just the same waves.

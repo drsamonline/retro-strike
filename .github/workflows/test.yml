@@ -44,3 +44,5 @@ jobs:
         run: node tools/test-save.mjs
       - name: Run the daily-determinism tests
         run: node tools/test-daily.mjs
+      - name: Run the ghost-provenance tests
+        run: node tools/test-ghost.mjs

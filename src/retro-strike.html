@@ -692,7 +692,35 @@ var NADE_NAMES = ["GRENADE", "MINE", "CLUSTER"];
 var mode = "endless"; // endless | daily | train | camp | cont
 var paused = false, nadeHold = null;
 var shopT = 0, shopOpen = false; // intermission shop overlay: auto-show timer + manual toggle
-var GHOST = null, ghostRec = [], ghostT = 0, ghostI = 0;
+var GHOST = null, ghostRec = [], ghostWaves = [], ghostT = 0, ghostI = 0;
+// The ghost records the PLAYER's path. It used to record nothing else, so the
+// specter walked through a fight nobody could see: the enemies it was dodging
+// were not there, and the replay was a stroll, not the run it claimed to be.
+// The record now carries the wave's spawns too — one entry per enemy the run
+// met, on the same 0.4s clock as the path, so the two streams line up exactly.
+var GHOST_DT = 0.4, GHOST_CAP = 900, GHOST_LIFE = 6;
+function ghostTick(t) {
+  if (!isFinite(t) || t < 0) return 0;
+  return Math.round(t / GHOST_DT) * GHOST_DT;
+}
+function recordGhostSpawn(list, t, type, x, z) {
+  if (!list || list.length >= GHOST_CAP) return list;
+  if (!isFinite(t) || !isFinite(x) || !isFinite(z)) return list;
+  list.push({ t: ghostTick(t), type: String(type || "grunt"), x: x, z: z });
+  return list;
+}
+// Which of the recorded enemies are on the field at time t: a spawn is visible
+// for GHOST_LIFE seconds from its own tick. A record from before this build has
+// no spawns, and answers [] rather than throwing — the path still replays.
+function ghostEnemiesAt(gh, t, life) {
+  if (!gh || !gh.spawns || !gh.spawns.length) return [];
+  var L = (life > 0) ? life : GHOST_LIFE, out = [], gi, s;
+  for (gi = 0; gi < gh.spawns.length; gi++) {
+    s = gh.spawns[gi];
+    if (s.t <= t && t < s.t + L) out.push(s);
+  }
+  return out;
+}
 // A ghost is only honest if it is replayed into the run it was recorded in.
 // The record used to carry the arena seed alone, so any best run on that arena
 // could be replayed into any mode on it — and a daily best recorded before the
@@ -723,7 +751,7 @@ function saveGhost() {
     var old = JSON.parse(localStorage.getItem("retroStrikeGhost") || "null");
     if ((!old || score > old.score) && ghostRec.length > 1) localStorage.setItem("retroStrikeGhost", JSON.stringify({
       seed: arenaSeed, score: score, mode: mode === "cont" ? "endless" : mode,
-      day: Math.floor(Date.now() / 86400000), rec: ghostRec
+      day: Math.floor(Date.now() / 86400000), rec: ghostRec, spawns: ghostWaves
     }));
   } catch (e) {}
 }
@@ -1104,6 +1132,7 @@ function spawnWave() {
       x: sp[0], z: sp[1], type: bossType, hp: bhp, maxhp: bhp,
       speed: 0.72 * D.spd, r: 0.8, cd: 2.5, hitT: 0, spawnT: 0.5, wob: 0, p2: false, charge: 0
     });
+    recordGhostSpawn(ghostWaves, ghostT, bossType, sp[0], sp[1]);
     if (bossType === "summoner") toast("THE SUMMONER RISES!", 2.2);
     if (mode === "camp" && campObj && campObj.kind === "boss") campObj.bossDown = false;
     n = Math.floor(n / 2);
@@ -1129,6 +1158,7 @@ function spawnWave() {
     if (wave >= 4 && eliteRoll < 0.12) { e.elite = true; e.hp = Math.round(e.hp * 2.2); e.maxhp = e.hp; e.speed *= 1.15; }
     if (waveMut && waveMut.k === "BOUNTY" && !enemies.length) { e.gold = true; e.elite = true; e.hp = Math.round(e.hp * 2); e.maxhp = e.hp; }
     enemies.push(e);
+    recordGhostSpawn(ghostWaves, ghostT, e.type, e.x, e.z);
   }
 }
 function setObjMsg(m, t) { objMsg = m; objMsgT = t; }
@@ -1595,6 +1625,7 @@ function startGame(m) {
   throwType = 0; waveMut = null; waveObj = null;
   state = "play";
   ghostRec = [{ t: 0, x: player.x, z: player.z, yaw: player.yaw }];
+  ghostWaves = [];
   ghostT = 0; ghostI = 0;
   if (SET.ghost) loadGhost(); else GHOST = null;
   shopOpen = false; shopT = 0;
@@ -1768,6 +1799,7 @@ function continueRun() {
   dashT = 0; dashCd = 0; meleeCd = 0; throwType = 0;
   state = "play";
   ghostRec = [{ t: 0, x: player.x, z: player.z, yaw: player.yaw }];
+  ghostWaves = [];
   ghostT = 0; ghostI = 0;
   if (SET.ghost) loadGhost(); else GHOST = null;
   shopOpen = false; shopT = 0;
@@ -2680,6 +2712,26 @@ function render() {
           ctx.globalAlpha = 1;
         };
       })(gp[0], gp[1]) });
+    }
+    // the fight the ghost is walking: the wave's spawns, on the same 0.4s clock
+    var gws = ghostEnemiesAt(GHOST, ghostT);
+    for (i = 0; i < gws.length; i++) {
+      var gwx = gws[i].x, gwz = gws[i].z;
+      var gwd = Math.hypot(gwx - cam.x, gwz - cam.z);
+      if (gwd > 34) continue;
+      items.push({ d: gwd, draw: (function (hx, hz) {
+        return function () {
+          ctx.globalAlpha = 0.22;
+          drawShadow(hx, hz, 0.3);
+          var hp2 = toCam(hx, 0.5, hz);
+          if (hp2[2] > NEAR) {
+            var hs = projC(hp2);
+            ctx.fillStyle = "#94a3b8";
+            ctx.fillRect(hs[0] - 2, hs[1] - 2, 4, 4);
+          }
+          ctx.globalAlpha = 1;
+        };
+      })(gwx, gwz) });
     }
   }
 
