@@ -11,7 +11,7 @@
 **A complete retro-styled third-person shooter that lives inside a single HTML file — no engine, no build step, no dependencies.**
 
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm_Noncommercial_1.0.0-3DA639.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.5-ff8a00.svg?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4.6-ff8a00.svg?style=flat-square)](CHANGELOG.md)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-4ade80.svg?style=flat-square)](#-tech)
 [![Stars](https://img.shields.io/github/stars/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/stargazers)
 [![Forks](https://img.shields.io/github/forks/drsamonline/retro-strike?style=flat-square&logo=github)](https://github.com/drsamonline/retro-strike/network/members)
@@ -31,7 +31,7 @@
 
 <img src="assets/banner.png" alt="RETRO STRIKE — retro 3rd-person shooter" width="860">
 
-[![Release size](https://img.shields.io/badge/minified-99%20KB-e879f9.svg?style=flat-square)](dist/retro-strike.min.html)
+[![Release size](https://img.shields.io/badge/minified-110%20KB-e879f9.svg?style=flat-square)](dist/retro-strike.min.html)
 [![Made with JavaScript](https://img.shields.io/badge/JavaScript-f7df1e.svg?style=flat-square&logo=javascript&logoColor=black)](#-tech)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26.svg?style=flat-square&logo=html5&logoColor=white)](#-tech)
 [![Platform](https://img.shields.io/badge/platform-desktop%20%7C%20mobile%20%7C%20gamepad-38bdf8.svg?style=flat-square)](#-controls)
@@ -210,7 +210,7 @@ npm run build   # src/retro-strike.html -> dist/retro-strike.min.html
 ```
 retro-strike/
 ├── src/retro-strike.html        # 📜 readable, commented source (edit this)
-├── dist/retro-strike.min.html   # 🎮 minified, playable release (~90 KB)
+├── dist/retro-strike.min.html   # 🎮 minified, playable release (~110 KB)
 ├── tools/build.mjs              # 🔧 minifier (extracts + compresses src -> dist)
 ├── assets/                      # 🎨 banner, logo, social preview, screenshots
 ├── docs/                        # 📚 architecture, controls, performance, audit
