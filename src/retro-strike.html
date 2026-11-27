@@ -703,21 +703,69 @@ function ghostTick(t) {
   if (!isFinite(t) || t < 0) return 0;
   return Math.round(t / GHOST_DT) * GHOST_DT;
 }
+// A spawn entry carries a coarse TRACK as well as its birth place: the enemy's
+// position on each 0.4s tick it is alive. A spawn with no track is a marker that
+// pops in and stands still, which is what the replay used to show; with a track
+// the replay's enemies advance and flank as they did. An enemy's track is bounded
+// by its own life in the replay — GHOST_LIFE / GHOST_DT + 1 samples, 16 at most —
+// so the save cannot grow without limit.
 function recordGhostSpawn(list, t, type, x, z) {
   if (!list || list.length >= GHOST_CAP) return list;
   if (!isFinite(t) || !isFinite(x) || !isFinite(z)) return list;
-  list.push({ t: ghostTick(t), type: String(type || "grunt"), x: x, z: z });
+  var tk = ghostTick(t);
+  list.push({ t: tk, type: String(type || "grunt"), x: x, z: z, path: [{ t: tk, x: x, z: z }] });
   return list;
+}
+// Record a spawn and hand back the entry it stored, so the live enemy can keep
+// its own track on that entry. Null when the cap refused it: the enemy then has
+// no ghost to move, and the recorder skips it rather than writing into someone
+// else's entry.
+function ghostSpawnFor(list, t, type, x, z) {
+  var n = list ? list.length : 0;
+  recordGhostSpawn(list, t, type, x, z);
+  return (list && list.length > n) ? list[list.length - 1] : null;
+}
+// One sample of a live enemy's place, on the spawn clock. Refused when it would
+// rewind, when the tick is already sampled, or when the enemy is past GHOST_LIFE
+// (it is dead in the replay by then, so a later sample would be a lie). Those
+// three refusals are also what bounds the track: at most one sample per tick, and
+// no tick past the enemy's own life.
+function recordGhostStep(list, entry, t, x, z) {
+  if (!entry || !entry.path || !entry.path.length) return entry;
+  if (!isFinite(t) || !isFinite(x) || !isFinite(z)) return entry;
+  var tk = ghostTick(t), last = entry.path[entry.path.length - 1];
+  if (!(tk > last.t)) return entry;
+  if (tk >= entry.path[0].t + GHOST_LIFE) return entry;
+  entry.path.push({ t: tk, x: x, z: z });
+  return entry;
+}
+// Where a recorded enemy was at time t: straight-line between the two samples
+// that bracket t, clamped at both ends. An entry with no track answers its
+// spawn point, which is what a record from before this build can honestly say.
+function ghostAt(s, t) {
+  var p = s && s.path;
+  if (!p || p.length < 2) return [s.x, s.z];
+  var i = 0;
+  while (i < p.length - 2 && p[i + 1].t <= t) i++;
+  var a = p[i], b = p[Math.min(i + 1, p.length - 1)];
+  var f = b.t > a.t ? (t - a.t) / (b.t - a.t) : 0;
+  if (f < 0) f = 0; if (f > 1) f = 1;
+  return [a.x + (b.x - a.x) * f, a.z + (b.z - a.z) * f];
 }
 // Which of the recorded enemies are on the field at time t: a spawn is visible
 // for GHOST_LIFE seconds from its own tick. A record from before this build has
-// no spawns, and answers [] rather than throwing — the path still replays.
+// no spawns, and answers [] rather than throwing — the path still replays. Each
+// live enemy comes back at its position AT t (not its spawn point), so the draw
+// needs no change and the fight it shows moves.
 function ghostEnemiesAt(gh, t, life) {
   if (!gh || !gh.spawns || !gh.spawns.length) return [];
-  var L = (life > 0) ? life : GHOST_LIFE, out = [], gi, s;
+  var L = (life > 0) ? life : GHOST_LIFE, out = [], gi, s, w;
   for (gi = 0; gi < gh.spawns.length; gi++) {
     s = gh.spawns[gi];
-    if (s.t <= t && t < s.t + L) out.push(s);
+    if (s.t <= t && t < s.t + L) {
+      w = ghostAt(s, t);
+      out.push({ t: s.t, type: s.type, x: w[0], z: w[1], sx: s.x, sz: s.z });
+    }
   }
   return out;
 }
@@ -1132,7 +1180,8 @@ function spawnWave() {
       x: sp[0], z: sp[1], type: bossType, hp: bhp, maxhp: bhp,
       speed: 0.72 * D.spd, r: 0.8, cd: 2.5, hitT: 0, spawnT: 0.5, wob: 0, p2: false, charge: 0
     });
-    recordGhostSpawn(ghostWaves, ghostT, bossType, sp[0], sp[1]);
+    // the boss keeps a track of its own: the replay's boss walks, it does not stand
+    enemies[enemies.length - 1].ghost = ghostSpawnFor(ghostWaves, ghostT, bossType, sp[0], sp[1]);
     if (bossType === "summoner") toast("THE SUMMONER RISES!", 2.2);
     if (mode === "camp" && campObj && campObj.kind === "boss") campObj.bossDown = false;
     n = Math.floor(n / 2);
@@ -1158,7 +1207,7 @@ function spawnWave() {
     if (wave >= 4 && eliteRoll < 0.12) { e.elite = true; e.hp = Math.round(e.hp * 2.2); e.maxhp = e.hp; e.speed *= 1.15; }
     if (waveMut && waveMut.k === "BOUNTY" && !enemies.length) { e.gold = true; e.elite = true; e.hp = Math.round(e.hp * 2); e.maxhp = e.hp; }
     enemies.push(e);
-    recordGhostSpawn(ghostWaves, ghostT, e.type, e.x, e.z);
+    e.ghost = ghostSpawnFor(ghostWaves, ghostT, e.type, e.x, e.z);
   }
 }
 function setObjMsg(m, t) { objMsg = m; objMsgT = t; }
@@ -2293,6 +2342,9 @@ function update(dt) {
       en.x -= edx / edist * 0.6;
       en.z -= edz / edist * 0.6;
     }
+    // the ghost's copy of this enemy keeps moving — one sample per 0.4s tick, so
+    // the replay shows the fight advancing instead of the cast popping in place
+    if (en.ghost) recordGhostStep(ghostWaves, en.ghost, ghostT, en.x, en.z);
   }
 
   // enemy separation

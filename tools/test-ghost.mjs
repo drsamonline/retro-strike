@@ -53,20 +53,23 @@ const CONSTS = SRC.match(/var GHOST_DT = [^\n]*/);
 const tickText = liftFn(SRC, 'function ghostTick(');
 const recText = liftFn(SRC, 'function recordGhostSpawn(');
 const atText = liftFn(SRC, 'function ghostEnemiesAt(');
+// v1.4.6 gave each spawn a coarse TRACK and ghostEnemiesAt() now asks ghostAt()
+// where the enemy was at t; the window rules this file pins are unchanged.
+const atPosText = liftFn(SRC, 'function ghostAt(');
 
-function build(consts, tick, rec, at) {
+function build(consts, tick, rec, at, atPos) {
   const ctx = { isFinite, Math, String, Array, console };
   vm.createContext(ctx);
-  vm.runInContext(consts + '\n' + tick + '\n' + rec + '\n' + at +
+  vm.runInContext(consts + '\n' + tick + '\n' + rec + '\n' + atPos + '\n' + at +
     '\nthis.G = { ghostTick, recordGhostSpawn, ghostEnemiesAt, GHOST_DT, GHOST_CAP, GHOST_LIFE };', ctx);
   return ctx.G;
 }
 
 ok('the shipped helpers were found',
-   !!CONSTS && !!tickText && !!recText && !!atText,
-   [!!CONSTS, !!tickText, !!recText, !!atText].join('/'));
+   !!CONSTS && !!tickText && !!recText && !!atText && !!atPosText,
+   [!!CONSTS, !!tickText, !!recText, !!atText, !!atPosText].join('/'));
 
-const G = build(CONSTS[0], tickText, recText, atText);
+const G = build(CONSTS[0], tickText, recText, atText, atPosText);
 const { ghostTick, recordGhostSpawn, ghostEnemiesAt, GHOST_DT, GHOST_CAP, GHOST_LIFE } = G;
 
 // ---- 1. the spawn clock is the path's clock --------------------------------
@@ -125,8 +128,8 @@ const ghostPosText = liftFn(SRC, 'function ghostPos(');
 ok('ghostPos() is untouched by this change and still lifts', !!ghostPosText);
 
 // ---- 6. the shipped source really wires it --------------------------------
-ok('the boss spawn is recorded', SRC.includes('recordGhostSpawn(ghostWaves, ghostT, bossType, sp[0], sp[1])'));
-ok('every grunt of the wave is recorded', SRC.includes('recordGhostSpawn(ghostWaves, ghostT, e.type, e.x, e.z)'));
+ok('the boss spawn is recorded', SRC.includes('ghostSpawnFor(ghostWaves, ghostT, bossType, sp[0], sp[1])'));
+ok('every grunt of the wave is recorded', SRC.includes('ghostSpawnFor(ghostWaves, ghostT, e.type, e.x, e.z)'));
 ok('the record is saved with the spawns', /spawns: ghostWaves/.test(SRC));
 ok('the spawns reset with the path on a new run',
    (SRC.match(/ghostWaves = \[\];/g) || []).length === 2,
@@ -135,12 +138,12 @@ ok('the ghost draw asks which enemies are live', SRC.includes('ghostEnemiesAt(GH
 
 // ---- 7. ten mutations, all red -------------------------------------------
 function mutation(label, edit, predicate) {
-  const m = { consts: CONSTS[0], tick: tickText, rec: recText, at: atText };
+  const m = { consts: CONSTS[0], tick: tickText, rec: recText, at: atText, atPos: atPosText };
   const target = edit.field;
   m[target] = m[target].replace(edit.find, edit.replace);
   let flipped;
   try {
-    const g = build(m.consts, m.tick, m.rec, m.at);
+    const g = build(m.consts, m.tick, m.rec, m.at, m.atPos);
     flipped = !predicate(g);
   } catch (e) { flipped = true; }
   ok('mutation is RED: ' + label, flipped);
@@ -159,7 +162,7 @@ mutation('ghostTick lets a negative time through',
   g => g.ghostTick(-5) === 0);
 
 mutation('a spawn is stored on the raw time',
-  { field: 'rec', find: 't: ghostTick(t)', replace: 't: t' },
+  { field: 'rec', find: 'var tk = ghostTick(t);', replace: 'var tk = t;' },
   g => { const l = []; g.recordGhostSpawn(l, 1.03, 'tank', 1, 1); return l[0].t === g.ghostTick(1.03); });
 
 mutation('the cap is ignored',

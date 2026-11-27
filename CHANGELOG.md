@@ -3,6 +3,22 @@
 All notable changes to **RETRO STRIKE** are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.4.6] — 2026-11-27
+
+The ghost's enemies move.
+
+### Fixed
+- 🐛 **The replay showed the fight's cast standing still.** v1.4.5 recorded every enemy's spawn, so the ghost replay had enemies on the field — but each one appeared where it was born and vanished six seconds later, so the fight was a set of markers popping in and out while the player's ghost walked past them. Each recorded enemy now keeps a coarse **track**: its place on every 0.4s tick it is alive, on the same clock as the player's path and the spawns, so the three streams cannot drift.
+- 🐛 **`ghostEnemiesAt()` answered the spawn point, not the enemy.** It now returns each live enemy at its position *at that instant* — straight-line between the two samples that bracket `t`, clamped at both ends — so the draw needed no change and the fight it shows moves: enemies advance, hold a sniper's lane and flank as they did.
+
+### Added
+- 🧪 `tools/test-ghost-motion.mjs` — **52 assertions**, seven mutations of the shipped code all RED: a spawn opens a one-sample track on the spawn clock; `recordGhostStep()` stores one sample per tick, refuses a rewind and refuses junk; an enemy's track stops when its own `GHOST_LIFE` is up (15 samples for a 6s enemy), which is also what bounds the save — a full 900-spawn record with every track stays under 1 MB, measured; `ghostAt()` interpolates and clamps; an entry with **no** track answers its spawn point, so a pre-1.4.6 record still replays. Wired into `npm test` and the Test workflow.
+
+### Notes
+- **A pre-1.4.6 record is not broken, it is coarser.** Its spawns have no track, so its enemies still appear at their birth place and vanish — the honest thing an old record can say. New records replay the fight moving.
+- **Only the wave's spawns carry a track.** A summoner's minions and a splitter's children are spawned mid-fight and are still not in the ghost's cast, which is the same scope v1.4.5 set.
+- Stacked on v1.4.5 (#11) and v1.4.4 (#9): the chain is unmerged, so this lands as the third PR rather than on `main`.
+
 ## [1.4.5] — 2026-11-25
 
 The ghost replay now shows the fight it was recorded in.
